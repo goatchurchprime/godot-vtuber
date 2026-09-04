@@ -5,6 +5,13 @@ microphone audio and webcam tracking. Its first objective is to keep audible
 speech aligned with audio-derived mouth animation while remaining useful as a
 test bed for the reusable audio and Vizeme libraries.
 
+## Development disclosure
+
+This project is being designed and developed with assistance from OpenAI Codex.
+Its architecture, behaviour and changes are directed and reviewed by the human
+maintainer. AI-assisted contributions are identified here so that the project's
+development process is transparent.
+
 The initial checkout deliberately runs without native dependencies or avatar
 assets. Missing integrations report themselves in the UI rather than stopping
 the application.
