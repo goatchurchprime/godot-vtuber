@@ -1,6 +1,18 @@
-[gd_scene load_steps=2 format=3]
+[gd_scene load_steps=5 format=3]
 
 [ext_resource type="Script" path="res://src/main.gd" id="1_main"]
+[ext_resource type="Script" path="res://src/avatar/avatar_driver.gd" id="2_avatar"]
+
+[sub_resource type="AudioStreamGenerator" id="AudioStreamGenerator_monitor"]
+mix_rate = 48000.0
+buffer_length = 1.0
+
+[sub_resource type="Environment" id="Environment_preview"]
+background_mode = 1
+background_color = Color(0.08, 0.09, 0.12, 1)
+ambient_light_source = 3
+ambient_light_color = Color(0.65, 0.68, 0.75, 1)
+ambient_light_energy = 0.65
 
 [node name="Main" type="Control"]
 layout_mode = 3
@@ -46,11 +58,32 @@ custom_minimum_size = Vector2(500, 0)
 layout_mode = 2
 size_flags_horizontal = 3
 
-[node name="PreviewText" type="Label" parent="Margin/Rows/Columns/Preview"]
+[node name="ViewportContainer" type="SubViewportContainer" parent="Margin/Rows/Columns/Preview"]
 layout_mode = 2
-text = "Avatar preview\n\nNo avatar profile loaded"
-horizontal_alignment = 1
-vertical_alignment = 1
+stretch = true
+
+[node name="Viewport" type="SubViewport" parent="Margin/Rows/Columns/Preview/ViewportContainer"]
+handle_input_locally = false
+size = Vector2i(800, 700)
+render_target_update_mode = 4
+
+[node name="World" type="Node3D" parent="Margin/Rows/Columns/Preview/ViewportContainer/Viewport"]
+
+[node name="Environment" type="WorldEnvironment" parent="Margin/Rows/Columns/Preview/ViewportContainer/Viewport/World"]
+environment = SubResource("Environment_preview")
+
+[node name="KeyLight" type="DirectionalLight3D" parent="Margin/Rows/Columns/Preview/ViewportContainer/Viewport/World"]
+rotation_degrees = Vector3(-35, -25, 0)
+light_energy = 1.2
+
+[node name="Camera" type="Camera3D" parent="Margin/Rows/Columns/Preview/ViewportContainer/Viewport/World"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.7, 0.5)
+current = true
+fov = 30.0
+
+[node name="Avatar" type="Node3D" parent="Margin/Rows/Columns/Preview/ViewportContainer/Viewport/World"]
+unique_name_in_owner = true
+script = ExtResource("2_avatar")
 
 [node name="Diagnostics" type="PanelContainer" parent="Margin/Rows/Columns"]
 custom_minimum_size = Vector2(340, 0)
@@ -72,6 +105,40 @@ layout_mode = 2
 theme_override_font_sizes/font_size = 20
 text = "Pipeline"
 
+[node name="InputDevice" type="OptionButton" parent="Margin/Rows/Columns/Diagnostics/Margin/Rows"]
+unique_name_in_owner = true
+layout_mode = 2
+
+[node name="Controls" type="HBoxContainer" parent="Margin/Rows/Columns/Diagnostics/Margin/Rows"]
+layout_mode = 2
+
+[node name="Microphone" type="CheckButton" parent="Margin/Rows/Columns/Diagnostics/Margin/Rows/Controls"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "Mic"
+
+[node name="Monitor" type="CheckButton" parent="Margin/Rows/Columns/Diagnostics/Margin/Rows/Controls"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "Monitor"
+
+[node name="DelayRow" type="HBoxContainer" parent="Margin/Rows/Columns/Diagnostics/Margin/Rows"]
+layout_mode = 2
+
+[node name="Label" type="Label" parent="Margin/Rows/Columns/Diagnostics/Margin/Rows/DelayRow"]
+layout_mode = 2
+text = "Playout delay"
+
+[node name="Delay" type="SpinBox" parent="Margin/Rows/Columns/Diagnostics/Margin/Rows/DelayRow"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+min_value = 40.0
+max_value = 900.0
+step = 20.0
+value = 250.0
+suffix = " ms"
+
 [node name="Audio" type="Label" parent="Margin/Rows/Columns/Diagnostics/Margin/Rows"]
 unique_name_in_owner = true
 layout_mode = 2
@@ -82,14 +149,31 @@ unique_name_in_owner = true
 layout_mode = 2
 text = "Viseme inference: unavailable"
 
+[node name="AvatarStatus" type="Label" parent="Margin/Rows/Columns/Diagnostics/Margin/Rows"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "Avatar: unavailable"
+
 [node name="Pose" type="Label" parent="Margin/Rows/Columns/Diagnostics/Margin/Rows"]
 unique_name_in_owner = true
 layout_mode = 2
 text = "Webcam pose: unavailable"
 
 [node name="Clock" type="Label" parent="Margin/Rows/Columns/Diagnostics/Margin/Rows"]
+unique_name_in_owner = true
 layout_mode = 2
 text = "Playout sample: 0"
+
+[node name="Buffer" type="Label" parent="Margin/Rows/Columns/Diagnostics/Margin/Rows"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "Buffered: 0 ms"
+
+[node name="Level" type="ProgressBar" parent="Margin/Rows/Columns/Diagnostics/Margin/Rows"]
+unique_name_in_owner = true
+layout_mode = 2
+max_value = 1.0
+show_percentage = false
 
 [node name="Note" type="Label" parent="Margin/Rows/Columns/Diagnostics/Margin/Rows"]
 layout_mode = 2
@@ -99,5 +183,11 @@ autowrap_mode = 2
 vertical_alignment = 2
 
 [node name="Footer" type="Label" parent="Margin/Rows"]
+unique_name_in_owner = true
 layout_mode = 2
-text = "Milestone 0 · dependency-free shell"
+text = "Milestone 1 · timestamped microphone loopback"
+
+[node name="MonitorPlayer" type="AudioStreamPlayer" parent="."]
+unique_name_in_owner = true
+stream = SubResource("AudioStreamGenerator_monitor")
+bus = &"VTuberMonitor"

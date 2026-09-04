@@ -30,7 +30,7 @@ TwoVoIP owns capture, conditioning, resampling and audio-clock information.
 The Vizeme component owns Mel history, inference and output stabilization. This
 application owns delay, synchronization, avatar mapping and rendering.
 
-## Run the dependency-free shell
+## Run the application
 
 From this directory:
 
@@ -40,6 +40,57 @@ nix shell github:NixOS/nixpkgs/b6018f87da91d19d0ab4cf979885689b469cdd41#godot_4_
 
 The shell is also a smoke test: it must open even when TwoVoIP, ONNX Runtime,
 the Mel frontend, model files, camera tracking and avatar files are absent.
+
+### Current TwoVoIP development checkout
+
+The microphone-loopback milestone uses the experimental
+`get_current_chunk()` hook proposed in TwoVoIP PR
+[#101](https://github.com/goatchurchprime/two-voip-godot-4/pull/101), on branch
+`codex/conditioned-pcm-loopback`.
+It returns the conditioned output-rate PCM that would otherwise be passed to
+Opus. From this repository, link a matching checkout with:
+
+```sh
+mkdir -p addons
+ln -s /path/to/two-voip-godot-4/addons/twovoip addons/twovoip
+```
+
+The link is ignored by Git. Without it, the application remains usable as a
+dependency-status shell.
+
+Verify the linked audio boundary with:
+
+```sh
+nix shell github:NixOS/nixpkgs/b6018f87da91d19d0ab4cf979885689b469cdd41#godot_4_6 \
+  --command godot4 --headless --path "$PWD" \
+  --script res://tests/twovoip_loopback_smoke.gd
+```
+
+Enable **Mic**, then **Monitor**, to hear the conditioned microphone after the
+configured delay. Headphones are strongly recommended to prevent acoustic
+feedback. Changing the delay restarts and refills the playout buffer.
+
+The audio is sent through the `VTuberMonitor` Godot bus. The displayed processed
+and playout positions are 48 kHz sample-clock values. Viseme results are queued
+against that same clock and applied when their audio reaches playout.
+
+For live lip animation, also link compatible `onnx_loader` and `vizemes_mel`
+addons, an ONNX model to `models/viseme.onnx`, and an avatar to
+`avatars/readyplayerme_avatar.glb`. For assets with external textures, link or
+copy the complete ignored `avatars/` directory rather than one GLB symlink. The
+ONNX model must carry `vizemes_meta_json`; its embedded
+audio and tensor values are the runtime contract. Avatar meshes may supply the
+OVR-compatible `viseme_sil` through `viseme_U` blend shapes. These paths are
+ignored so neither model nor avatar enters this repository.
+
+On NixOS, launch the complete development stack with:
+
+```sh
+env ONNX_LOADER_SKIP_SESSION_RELEASE=1 \
+  nix shell github:NixOS/nixpkgs/b6018f87da91d19d0ab4cf979885689b469cdd41#godot_4_6 \
+  github:NixOS/nixpkgs/b6018f87da91d19d0ab4cf979885689b469cdd41#onnxruntime \
+  --command godot4 --editor --path "$PWD"
+```
 
 ## Development dependencies
 
@@ -68,9 +119,9 @@ capture timestamp and are sampled independently by the renderer.
 
 ## Milestones
 
-1. Dependency-free project shell and data contracts.
-2. Conditioned microphone loopback with configurable delayed playout.
-3. Timestamped Vizeme inference aligned to that playout.
-4. One mapped GLB avatar with transparent/chroma-key rendering.
+1. Dependency-free project shell and data contracts. **Complete.**
+2. Conditioned microphone loopback with configurable delayed playout. **Prototype complete.**
+3. Timestamped Vizeme inference aligned to that playout. **Prototype complete.**
+4. One externally loaded GLB with live mouth blend shapes. **Prototype complete.**
 5. Webcam head and upper-body tracking behind a replaceable adapter.
 6. Hand tracking, expression mapping, recording and OBS packaging.
