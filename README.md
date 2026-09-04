@@ -41,6 +41,10 @@ experimental. The links and large model/avatar files are ignored by Git.
 Releases must contain explicit compatible dependency artifacts rather than
 machine-specific symbolic links.
 
+Avatar files under `avatars/` and model files under `models/` are intentionally
+ignored. Keep private test assets outside version control and load or link them
+locally. A future public release must remain functional without those assets.
+
 Planned adapters are:
 
 - TwoVoIP for conditioned 48 kHz playout and 16 kHz analysis PCM.
@@ -63,4 +67,3 @@ capture timestamp and are sampled independently by the renderer.
 4. One mapped GLB avatar with transparent/chroma-key rendering.
 5. Webcam head and upper-body tracking behind a replaceable adapter.
 6. Hand tracking, expression mapping, recording and OBS packaging.
-
