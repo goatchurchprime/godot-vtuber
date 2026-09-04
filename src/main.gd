@@ -8,6 +8,7 @@ const MEL_EXTENSION := "res://addons/vizemes_mel/vizemes_mel.gdextension"
 const ONNX_EXTENSION := "res://addons/onnx_loader/onnx_loader.gdextension"
 const VISEME_MODEL := "res://models/viseme.onnx"
 const VisemeStreamScript := preload("res://src/visemes/viseme_stream.gd")
+const OvrLipSyncStreamScript := preload("res://src/visemes/ovr_lipsync_stream.gd")
 const VisemeFrameScript := preload("res://src/visemes/viseme_frame.gd")
 const GATE_HYSTERESIS_DB := 6.0
 const GATE_RELEASE_CHUNKS := 6
@@ -24,12 +25,15 @@ const GATE_RELEASE_CHUNKS := 6
 @onready var monitor: CheckButton = %Monitor
 @onready var delay: SpinBox = %Delay
 @onready var gate_db: SpinBox = %GateDb
+@onready var backend_selector: OptionButton = %Backend
 @onready var input_device: OptionButton = %InputDevice
 @onready var monitor_player: AudioStreamPlayer = %MonitorPlayer
 @onready var avatar: Node = %Avatar
 
 var encoder: Object
 var viseme_stream: Variant
+var onnx_viseme_stream: Variant
+var ovr_viseme_stream: Variant
 var playback: AudioStreamGeneratorPlayback
 var pending_input := PackedVector2Array()
 var playout_queue: Array[PackedVector2Array] = []
@@ -115,16 +119,28 @@ func _configure_encoder() -> void:
 
 
 func _configure_visemes() -> void:
-	if not ClassDB.class_exists("MelFrontend") or not ClassDB.class_exists("OnnxLoader"):
-		viseme_status.text = "Viseme inference: optional dependencies absent"
+	backend_selector.clear()
+	backend_selector.add_item("Our Mel + ONNX", 0)
+	backend_selector.add_item("OVRLipSync 1.61", 1)
+	backend_selector.item_selected.connect(_select_viseme_backend)
+	if ClassDB.class_exists("MelFrontend") and ClassDB.class_exists("OnnxLoader") and FileAccess.file_exists(VISEME_MODEL):
+		onnx_viseme_stream = VisemeStreamScript.new()
+		onnx_viseme_stream.model_path = VISEME_MODEL
+		add_child(onnx_viseme_stream)
+	ovr_viseme_stream = OvrLipSyncStreamScript.new()
+	add_child(ovr_viseme_stream)
+	_select_viseme_backend(0)
+
+
+func _select_viseme_backend(index: int) -> void:
+	viseme_queue.clear()
+	speech_active = false
+	quiet_chunks = 0
+	viseme_stream = onnx_viseme_stream if index == 0 else ovr_viseme_stream
+	if viseme_stream == null:
+		viseme_status.text = "Viseme inference: selected backend unavailable"
 		return
-	if not FileAccess.file_exists(VISEME_MODEL):
-		viseme_status.text = "Viseme inference: model absent"
-		return
-	viseme_stream = VisemeStreamScript.new()
-	viseme_stream.model_path = VISEME_MODEL
-	add_child(viseme_stream)
-	viseme_status.text = "Viseme inference: %s" % viseme_stream.status
+	viseme_status.text = "Viseme inference: %s" % viseme_stream.get_status()
 
 
 func _configure_audio_bus() -> void:
@@ -196,7 +212,7 @@ func _capture_conditioned_chunks() -> void:
 		var chunk_end := processed_sample_position + conditioned.size()
 		if viseme_stream != null:
 			var analysis: PackedFloat32Array = encoder.call("get_current_chunk_16khz")
-			if viseme_stream.push_pcm(analysis):
+			if viseme_stream.push_audio(conditioned, analysis):
 				var gated_levels := _gate_visemes(
 					viseme_stream.levels,
 					float(encoder.call("get_rms")),

@@ -113,6 +113,20 @@ Planned adapters are:
 
 - TwoVoIP for conditioned 48 kHz playout and 16 kHz analysis PCM.
 - MelFrontend and godot-onnx-loader for audio-to-Viseme inference.
+
+## Experimental OVRLipSync comparison
+
+The `experiment/ovrlipsync-comparison` branch adds a backend selector for a
+Windows-only comparison with OVRLipSync 1.61. It requires a matching TwoVoIP
+build from its `experiment/ovrlipsync-backend` branch. The proprietary SDK and
+DLL are intentionally excluded from this public repository.
+
+Both backends feed the same 15 OVR-compatible weights into the same silence
+gate, timestamp queue, delayed audio and avatar driver. OVR receives the same
+post-conditioning 48 kHz stereo frame that is sent to playout; the project
+backend receives the corresponding post-conditioning 16 kHz analysis frame.
+This keeps the subjective comparison focused on the recognizers rather than
+different animation or audio paths.
 - A separately packaged MediaPipe-compatible tracking process or extension.
 - Avatar profiles mapping canonical pose and expression names to a particular
   GLB/VRM skeleton and its blend shapes.

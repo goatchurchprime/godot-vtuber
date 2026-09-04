@@ -97,6 +97,10 @@ func push_pcm(pcm_16khz: PackedFloat32Array) -> bool:
 	return _predict_latest()
 
 
+func push_audio(_conditioned_48khz: PackedVector2Array, analysis_16khz: PackedFloat32Array) -> bool:
+	return push_pcm(analysis_16khz)
+
+
 func _predict_latest() -> bool:
 	var frame_count := _history.size() / _n_mels
 	if frame_count <= 0:

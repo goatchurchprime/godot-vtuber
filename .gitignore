@@ -4,6 +4,6 @@ addons/twovoip
 addons/vizemes_mel
 addons/onnx_loader
 models/
+vendor/OVRLipSyncNative/
 avatars/
 *.log
-
