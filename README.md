@@ -70,6 +70,12 @@ Enable **Mic**, then **Monitor**, to hear the conditioned microphone after the
 configured delay. Headphones are strongly recommended to prevent acoustic
 feedback. Changing the delay restarts and refills the playout buffer.
 
+The visible **Silence gate** defaults to -42 dBFS. Below it, the application
+continues inference but sends an explicit silence viseme to the avatar. A 6 dB,
+120 ms release hysteresis prevents background noise near the threshold from
+rapidly reopening the mouth. Adjust the threshold against the displayed live
+RMS; this is application postprocessing, not hidden microphone gain.
+
 The audio is sent through the `VTuberMonitor` Godot bus. The displayed processed
 and playout positions are 48 kHz sample-clock values. Viseme results are queued
 against that same clock and applied when their audio reaches playout.

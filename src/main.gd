@@ -9,6 +9,8 @@ const ONNX_EXTENSION := "res://addons/onnx_loader/onnx_loader.gdextension"
 const VISEME_MODEL := "res://models/viseme.onnx"
 const VisemeStreamScript := preload("res://src/visemes/viseme_stream.gd")
 const VisemeFrameScript := preload("res://src/visemes/viseme_frame.gd")
+const GATE_HYSTERESIS_DB := 6.0
+const GATE_RELEASE_CHUNKS := 6
 
 @onready var audio_status: Label = %Audio
 @onready var viseme_status: Label = %Visemes
@@ -17,9 +19,11 @@ const VisemeFrameScript := preload("res://src/visemes/viseme_frame.gd")
 @onready var clock_status: Label = %Clock
 @onready var buffer_status: Label = %Buffer
 @onready var level: ProgressBar = %Level
+@onready var level_text: Label = %LevelText
 @onready var microphone: CheckButton = %Microphone
 @onready var monitor: CheckButton = %Monitor
 @onready var delay: SpinBox = %Delay
+@onready var gate_db: SpinBox = %GateDb
 @onready var input_device: OptionButton = %InputDevice
 @onready var monitor_player: AudioStreamPlayer = %MonitorPlayer
 @onready var avatar: Node = %Avatar
@@ -36,6 +40,8 @@ var playback_capacity_frames := 0
 var required_input_frames := 0
 var processing_enabled := false
 var viseme_queue: Array = []
+var speech_active := false
+var quiet_chunks := 0
 
 
 func _ready() -> void:
@@ -148,6 +154,8 @@ func _set_microphone_enabled(enabled: bool) -> void:
 	processing_enabled = enabled
 	if not enabled:
 		pending_input.clear()
+		speech_active = false
+		quiet_chunks = 0
 		_restart_playout()
 
 
@@ -189,9 +197,13 @@ func _capture_conditioned_chunks() -> void:
 		if viseme_stream != null:
 			var analysis: PackedFloat32Array = encoder.call("get_current_chunk_16khz")
 			if viseme_stream.push_pcm(analysis):
+				var gated_levels := _gate_visemes(
+					viseme_stream.levels,
+					float(encoder.call("get_rms")),
+				)
 				var frame: Variant = VisemeFrameScript.new(
 					chunk_end,
-					viseme_stream.levels.duplicate(),
+					gated_levels,
 				)
 				if monitor.button_pressed:
 					viseme_queue.append(frame)
@@ -203,6 +215,27 @@ func _capture_conditioned_chunks() -> void:
 			queued_frames += conditioned.size()
 		else:
 			submitted_sample_position = processed_sample_position
+
+
+func _gate_visemes(raw_levels: PackedFloat32Array, rms: float) -> PackedFloat32Array:
+	var rms_db := linear_to_db(maxf(rms, 0.000001))
+	if not speech_active and rms_db >= gate_db.value:
+		speech_active = true
+		quiet_chunks = 0
+	elif speech_active:
+		if rms_db < gate_db.value - GATE_HYSTERESIS_DB:
+			quiet_chunks += 1
+			if quiet_chunks >= GATE_RELEASE_CHUNKS:
+				speech_active = false
+		else:
+			quiet_chunks = 0
+	if speech_active:
+		return raw_levels.duplicate()
+	var silence := PackedFloat32Array()
+	silence.resize(raw_levels.size())
+	if not silence.is_empty():
+		silence[0] = 1.0
+	return silence
 
 
 func _start_playout_when_ready() -> void:
@@ -251,6 +284,11 @@ func _get_playout_sample_position() -> int:
 
 func _update_diagnostics() -> void:
 	level.value = encoder.call("get_peak") if encoder != null else 0.0
+	var rms := float(encoder.call("get_rms")) if encoder != null else 0.0
+	level_text.text = "RMS: %.1f dBFS · %s" % [
+		linear_to_db(maxf(rms, 0.000001)),
+		"speech" if speech_active else "silence",
+	]
 	var generator_frames := 0
 	if playback != null:
 		generator_frames = playback_capacity_frames - playback.get_frames_available()

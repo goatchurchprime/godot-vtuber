@@ -139,6 +139,23 @@ step = 20.0
 value = 250.0
 suffix = " ms"
 
+[node name="GateRow" type="HBoxContainer" parent="Margin/Rows/Columns/Diagnostics/Margin/Rows"]
+layout_mode = 2
+
+[node name="Label" type="Label" parent="Margin/Rows/Columns/Diagnostics/Margin/Rows/GateRow"]
+layout_mode = 2
+text = "Silence gate"
+
+[node name="GateDb" type="SpinBox" parent="Margin/Rows/Columns/Diagnostics/Margin/Rows/GateRow"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+min_value = -70.0
+max_value = -15.0
+step = 1.0
+value = -42.0
+suffix = " dBFS"
+
 [node name="Audio" type="Label" parent="Margin/Rows/Columns/Diagnostics/Margin/Rows"]
 unique_name_in_owner = true
 layout_mode = 2
@@ -174,6 +191,11 @@ unique_name_in_owner = true
 layout_mode = 2
 max_value = 1.0
 show_percentage = false
+
+[node name="LevelText" type="Label" parent="Margin/Rows/Columns/Diagnostics/Margin/Rows"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "RMS: silence"
 
 [node name="Note" type="Label" parent="Margin/Rows/Columns/Diagnostics/Margin/Rows"]
 layout_mode = 2
