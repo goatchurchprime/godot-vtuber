@@ -129,7 +129,9 @@ func _configure_visemes() -> void:
 		add_child(onnx_viseme_stream)
 	ovr_viseme_stream = OvrLipSyncStreamScript.new()
 	add_child(ovr_viseme_stream)
-	_select_viseme_backend(0)
+	var initial_backend := 0 if onnx_viseme_stream != null else 1
+	backend_selector.select(initial_backend)
+	_select_viseme_backend(initial_backend)
 
 
 func _select_viseme_backend(index: int) -> void:
