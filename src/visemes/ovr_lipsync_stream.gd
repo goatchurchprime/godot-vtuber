@@ -21,7 +21,8 @@ func _ready() -> void:
 	if _backend == null or not bool(_backend.call("is_available")):
 		status = "TwoVoIP was built without OVRLipSync"
 		return
-	var error: int = _backend.call("configure", SAMPLE_RATE, FRAME_SIZE, 2, true)
+	var library_dir := ProjectSettings.globalize_path("res://addons/twovoip/libs")
+	var error: int = _backend.call("configure", SAMPLE_RATE, FRAME_SIZE, library_dir, 2, true)
 	if error != OK:
 		status = "configuration failed: %s" % _backend.call("get_status")
 		return
