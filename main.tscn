@@ -1,0 +1,103 @@
+[gd_scene load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://src/main.gd" id="1_main"]
+
+[node name="Main" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1_main")
+
+[node name="Margin" type="MarginContainer" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 24.0
+offset_top = 24.0
+offset_right = -24.0
+offset_bottom = -24.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="Rows" type="VBoxContainer" parent="Margin"]
+layout_mode = 2
+theme_override_constants/separation = 16
+
+[node name="Title" type="Label" parent="Margin/Rows"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 28
+text = "Godot VTuber"
+
+[node name="Summary" type="Label" parent="Margin/Rows"]
+layout_mode = 2
+text = "Timestamped microphone, viseme and webcam-pose integration"
+
+[node name="Columns" type="HBoxContainer" parent="Margin/Rows"]
+layout_mode = 2
+size_flags_vertical = 3
+theme_override_constants/separation = 16
+
+[node name="Preview" type="PanelContainer" parent="Margin/Rows/Columns"]
+custom_minimum_size = Vector2(500, 0)
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="PreviewText" type="Label" parent="Margin/Rows/Columns/Preview"]
+layout_mode = 2
+text = "Avatar preview\n\nNo avatar profile loaded"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="Diagnostics" type="PanelContainer" parent="Margin/Rows/Columns"]
+custom_minimum_size = Vector2(340, 0)
+layout_mode = 2
+
+[node name="Margin" type="MarginContainer" parent="Margin/Rows/Columns/Diagnostics"]
+layout_mode = 2
+theme_override_constants/margin_left = 16
+theme_override_constants/margin_top = 16
+theme_override_constants/margin_right = 16
+theme_override_constants/margin_bottom = 16
+
+[node name="Rows" type="VBoxContainer" parent="Margin/Rows/Columns/Diagnostics/Margin"]
+layout_mode = 2
+theme_override_constants/separation = 10
+
+[node name="Heading" type="Label" parent="Margin/Rows/Columns/Diagnostics/Margin/Rows"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 20
+text = "Pipeline"
+
+[node name="Audio" type="Label" parent="Margin/Rows/Columns/Diagnostics/Margin/Rows"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "Audio conditioning: unavailable"
+
+[node name="Visemes" type="Label" parent="Margin/Rows/Columns/Diagnostics/Margin/Rows"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "Viseme inference: unavailable"
+
+[node name="Pose" type="Label" parent="Margin/Rows/Columns/Diagnostics/Margin/Rows"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "Webcam pose: unavailable"
+
+[node name="Clock" type="Label" parent="Margin/Rows/Columns/Diagnostics/Margin/Rows"]
+layout_mode = 2
+text = "Playout sample: 0"
+
+[node name="Note" type="Label" parent="Margin/Rows/Columns/Diagnostics/Margin/Rows"]
+layout_mode = 2
+size_flags_vertical = 3
+text = "The application runs without optional native dependencies. Adapters will activate as they are installed."
+autowrap_mode = 2
+vertical_alignment = 2
+
+[node name="Footer" type="Label" parent="Margin/Rows"]
+layout_mode = 2
+text = "Milestone 0 · dependency-free shell"

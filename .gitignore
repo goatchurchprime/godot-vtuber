@@ -1,0 +1,9 @@
+.godot/
+.import/
+addons/twovoip
+addons/vizemes_mel
+addons/onnx_loader
+models/
+avatars/
+*.log
+
