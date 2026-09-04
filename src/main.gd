@@ -27,6 +27,8 @@ const GATE_RELEASE_CHUNKS := 6
 @onready var gate_db: SpinBox = %GateDb
 @onready var backend_selector: OptionButton = %Backend
 @onready var input_device: OptionButton = %InputDevice
+@onready var output_device: OptionButton = %OutputDevice
+@onready var viseme_bars: GridContainer = %VisemeBars
 @onready var monitor_player: AudioStreamPlayer = %MonitorPlayer
 @onready var avatar: Node = %Avatar
 
@@ -54,10 +56,12 @@ func _ready() -> void:
 	_load_optional_extension(ONNX_EXTENSION, "OnnxLoader")
 	_configure_audio_bus()
 	_populate_input_devices()
+	_populate_output_devices()
 	microphone.toggled.connect(_set_microphone_enabled)
 	monitor.toggled.connect(_set_monitor_enabled)
 	delay.value_changed.connect(_restart_playout.bind())
 	input_device.item_selected.connect(_select_input_device)
+	output_device.item_selected.connect(_select_output_device)
 	audio_status.text = _availability("Audio conditioning", "TwovoipOpusEncoder")
 	viseme_status.text = _availability("Viseme inference", "OnnxLoader")
 	pose_status.text = "Webcam pose: adapter not installed"
@@ -129,7 +133,12 @@ func _configure_visemes() -> void:
 		add_child(onnx_viseme_stream)
 	ovr_viseme_stream = OvrLipSyncStreamScript.new()
 	add_child(ovr_viseme_stream)
+	backend_selector.set_item_disabled(0, onnx_viseme_stream == null)
+	var ovr_ready: bool = bool(ovr_viseme_stream.is_ready())
+	backend_selector.set_item_disabled(1, not ovr_ready)
 	var initial_backend := 0 if onnx_viseme_stream != null else 1
+	if onnx_viseme_stream == null and not ovr_ready:
+		initial_backend = 0
 	backend_selector.select(initial_backend)
 	_select_viseme_backend(initial_backend)
 
@@ -158,9 +167,23 @@ func _populate_input_devices() -> void:
 		input_device.add_item(device)
 
 
+func _populate_output_devices() -> void:
+	output_device.clear()
+	var selected_device := AudioServer.get_output_device()
+	for device in AudioServer.get_output_device_list():
+		output_device.add_item(device)
+		if device == selected_device:
+			output_device.select(output_device.item_count - 1)
+
+
 func _select_input_device(index: int) -> void:
 	if index >= 0:
 		AudioServer.set_input_device(input_device.get_item_text(index))
+
+
+func _select_output_device(index: int) -> void:
+	if index >= 0:
+		AudioServer.set_output_device(output_device.get_item_text(index))
 
 
 func _set_microphone_enabled(enabled: bool) -> void:
@@ -322,6 +345,7 @@ func _update_diagnostics() -> void:
 	]
 	if viseme_stream != null:
 		viseme_status.text = "Viseme inference: %s" % viseme_stream.get_status()
+		viseme_bars.set_levels(viseme_stream.levels)
 	avatar_status.text = "Avatar: %s" % avatar.status
 
 

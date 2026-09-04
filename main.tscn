@@ -1,7 +1,8 @@
-[gd_scene load_steps=5 format=3]
+[gd_scene load_steps=6 format=3]
 
 [ext_resource type="Script" path="res://src/main.gd" id="1_main"]
 [ext_resource type="Script" path="res://src/avatar/avatar_driver.gd" id="2_avatar"]
+[ext_resource type="Script" path="res://src/visemes/viseme_bars.gd" id="3_bars"]
 
 [sub_resource type="AudioStreamGenerator" id="AudioStreamGenerator_monitor"]
 mix_rate = 48000.0
@@ -109,6 +110,10 @@ text = "Pipeline"
 unique_name_in_owner = true
 layout_mode = 2
 
+[node name="OutputDevice" type="OptionButton" parent="Margin/Rows/Columns/Diagnostics/Margin/Rows"]
+unique_name_in_owner = true
+layout_mode = 2
+
 [node name="Controls" type="HBoxContainer" parent="Margin/Rows/Columns/Diagnostics/Margin/Rows"]
 layout_mode = 2
 
@@ -167,6 +172,17 @@ text = "Viseme backend"
 unique_name_in_owner = true
 layout_mode = 2
 size_flags_horizontal = 3
+
+[node name="RawWeights" type="Label" parent="Margin/Rows/Columns/Diagnostics/Margin/Rows"]
+layout_mode = 2
+text = "Raw recognizer weights"
+
+[node name="VisemeBars" type="GridContainer" parent="Margin/Rows/Columns/Diagnostics/Margin/Rows"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_constants/h_separation = 5
+theme_override_constants/v_separation = 0
+script = ExtResource("3_bars")
 
 [node name="Audio" type="Label" parent="Margin/Rows/Columns/Diagnostics/Margin/Rows"]
 unique_name_in_owner = true
