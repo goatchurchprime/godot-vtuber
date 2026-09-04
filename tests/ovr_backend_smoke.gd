@@ -4,6 +4,9 @@ extends SceneTree
 
 
 func _init() -> void:
+	if not ClassDB.class_exists("OvrLipSyncBackend"):
+		var load_error := GDExtensionManager.load_extension("res://addons/twovoip/twovoip.gdextension")
+		assert(load_error == OK, "could not load the TwoVoIP extension")
 	assert(ClassDB.class_exists("OvrLipSyncBackend"), "OvrLipSyncBackend is missing")
 	var backend: Object = ClassDB.instantiate("OvrLipSyncBackend")
 	assert(backend != null and bool(backend.call("is_available")), "OVRLipSync was not compiled in")
