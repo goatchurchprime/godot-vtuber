@@ -11,8 +11,7 @@ func _ready() -> void:
 	pose_status.text = "Webcam pose: adapter not installed"
 
 
-func _availability(label: String, class_name: StringName) -> String:
-	if ClassDB.class_exists(class_name):
+func _availability(label: String, native_class: StringName) -> String:
+	if ClassDB.class_exists(native_class):
 		return "%s: available" % label
 	return "%s: optional dependency absent" % label
-
