@@ -106,9 +106,17 @@ layout_mode = 2
 theme_override_font_sizes/font_size = 20
 text = "Pipeline"
 
+[node name="InputDeviceLabel" type="Label" parent="Margin/Rows/Columns/Diagnostics/Margin/Rows"]
+layout_mode = 2
+text = "Input device"
+
 [node name="InputDevice" type="OptionButton" parent="Margin/Rows/Columns/Diagnostics/Margin/Rows"]
 unique_name_in_owner = true
 layout_mode = 2
+
+[node name="OutputDeviceLabel" type="Label" parent="Margin/Rows/Columns/Diagnostics/Margin/Rows"]
+layout_mode = 2
+text = "Output device"
 
 [node name="OutputDevice" type="OptionButton" parent="Margin/Rows/Columns/Diagnostics/Margin/Rows"]
 unique_name_in_owner = true
