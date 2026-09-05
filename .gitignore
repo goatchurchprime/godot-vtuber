@@ -7,4 +7,5 @@ models/
 vendor/OVRLipSyncNative/
 fixtures/
 avatars/
+experiments/**/private/
 *.log

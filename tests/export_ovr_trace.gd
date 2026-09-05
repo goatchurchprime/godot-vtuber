@@ -34,11 +34,15 @@ func _run() -> void:
 	var fixture_path := _option("fixture", DEFAULT_FIXTURE)
 	var output_path := _option("output", DEFAULT_OUTPUT)
 	var paced := _option("paced", "true") == "true"
+	var smoothing := int(_option("smoothing", "-1"))
 	var backend: Object = ClassDB.instantiate("OvrLipSyncBackend")
 	assert(backend != null and bool(backend.call("is_available")), "OVRLipSync was not compiled in")
 	var library_dir := ProjectSettings.globalize_path("res://addons/twovoip/libs")
 	var error: int = backend.call("configure", SAMPLE_RATE, frame_size, library_dir, 2, true)
 	assert(error == OK, str(backend.call("get_status")))
+	if smoothing >= 1:
+		error = backend.call("set_smoothing", smoothing)
+		assert(error == OK, str(backend.call("get_status")))
 	# Read the source WAV itself. A normal Godot import may QOA-compress it, in
 	# which case AudioStreamWAV.data contains compressed bytes rather than PCM.
 	var stream := AudioStreamWAV.load_from_file(ProjectSettings.globalize_path(fixture_path))
@@ -88,7 +92,8 @@ func _run() -> void:
 		"frame_size": frame_size,
 		"frame_duration_s": frame_ms / 1000.0,
 		"viseme_names": VISEMES,
-		"weight_state": "raw SDK output; default SDK smoothing; persistent context",
+		"weight_state": "SDK output; persistent context",
+		"smoothing": "sdk_default" if smoothing < 1 else smoothing,
 		"paced": paced,
 		"timing_warmup_s": WARMUP_SECONDS,
 		"timing": {
