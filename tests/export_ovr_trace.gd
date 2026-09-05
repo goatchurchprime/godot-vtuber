@@ -33,6 +33,7 @@ func _run() -> void:
 	var frame_size := int(SAMPLE_RATE * frame_ms / 1000)
 	var fixture_path := _option("fixture", DEFAULT_FIXTURE)
 	var output_path := _option("output", DEFAULT_OUTPUT)
+	var paced := _option("paced", "true") == "true"
 	var backend: Object = ClassDB.instantiate("OvrLipSyncBackend")
 	assert(backend != null and bool(backend.call("is_available")), "OVRLipSync was not compiled in")
 	var library_dir := ProjectSettings.globalize_path("res://addons/twovoip/libs")
@@ -71,7 +72,8 @@ func _run() -> void:
 			"reported_frame_delay_ms": int(backend.call("get_frame_delay_ms")),
 			"weights": Array(backend.call("get_levels")),
 		})
-		await create_timer(frame_ms / 1000.0).timeout
+		if paced:
+			await create_timer(frame_ms / 1000.0).timeout
 	assert(not timing_usec.is_empty(), "fixture is shorter than the timing warmup")
 	timing_usec.sort()
 	var timing_total := 0
@@ -87,6 +89,7 @@ func _run() -> void:
 		"frame_duration_s": frame_ms / 1000.0,
 		"viseme_names": VISEMES,
 		"weight_state": "raw SDK output; default SDK smoothing; persistent context",
+		"paced": paced,
 		"timing_warmup_s": WARMUP_SECONDS,
 		"timing": {
 			"frames": timing_usec.size(),
