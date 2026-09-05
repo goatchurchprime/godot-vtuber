@@ -43,6 +43,11 @@ so OVR probably includes nonlinear or multi-stage behavior. The evidence is
 nevertheless consistent with its main artistic benefit being downstream of
 classification.
 
+The 15 OVR weights always summed to one. `sil` consequently behaves as the
+complement of total visible articulation rather than an independent mouth
+shape. Its fitted time constant was close to the other active classes, although
+its larger numerical range made its residual error more prominent.
+
 ## Implications
 
 The current ONNX network should not be asked to learn both phonetic evidence and
@@ -74,4 +79,3 @@ The following experiment should then reduce the acoustic input itself—testing
 short FFT/log-spectrum features against MEL—while holding the winning
 postprocessor fixed. That separation will reveal whether our remaining cost and
 errors come from the MEL representation or from classification.
-
