@@ -1,0 +1,467 @@
+{
+  "schema": "opus_viseme_robustness_v1",
+  "comparison": "complete 15-value vectors; no rider reduction or quantization",
+  "codec": {
+    "application": "voip",
+    "frame_duration_ms": 20,
+    "vbr": "off"
+  },
+  "sources": {
+    "julian_vowel_probe_16k_plus9db": {
+      "ovr_s1": {
+        "12": {
+          "frames": 8110,
+          "reference_active_frames": 4424,
+          "vector_rmse": 0.07551068983313138,
+          "active_vector_rmse": 0.09843847529688357,
+          "dominant_agreement": 0.8715166461159063,
+          "active_dominant_agreement": 0.7721518987341772,
+          "reference_mean_movement": 0.08736635594687107,
+          "decoded_mean_movement": 0.12094765929817197,
+          "reference_switches": 429,
+          "decoded_switches": 539
+        },
+        "16": {
+          "frames": 8110,
+          "reference_active_frames": 4424,
+          "vector_rmse": 0.049680730855555966,
+          "active_vector_rmse": 0.06383944015809334,
+          "dominant_agreement": 0.9083847102342787,
+          "active_dominant_agreement": 0.8363471971066908,
+          "reference_mean_movement": 0.08736635594687107,
+          "decoded_mean_movement": 0.10469541990260227,
+          "reference_switches": 429,
+          "decoded_switches": 499
+        },
+        "24": {
+          "frames": 8110,
+          "reference_active_frames": 4424,
+          "vector_rmse": 0.03644977037387419,
+          "active_vector_rmse": 0.042492032245306365,
+          "dominant_agreement": 0.9394574599260173,
+          "active_dominant_agreement": 0.8948915009041591,
+          "reference_mean_movement": 0.08736635594687107,
+          "decoded_mean_movement": 0.09481061290185845,
+          "reference_switches": 429,
+          "decoded_switches": 467
+        },
+        "48": {
+          "frames": 8110,
+          "reference_active_frames": 4424,
+          "vector_rmse": 0.02345900383370444,
+          "active_vector_rmse": 0.02735841840076198,
+          "dominant_agreement": 0.9643649815043157,
+          "active_dominant_agreement": 0.9349005424954792,
+          "reference_mean_movement": 0.08736635594687107,
+          "decoded_mean_movement": 0.08943239637897189,
+          "reference_switches": 429,
+          "decoded_switches": 431
+        }
+      },
+      "ovr_s75": {
+        "12": {
+          "frames": 8110,
+          "reference_active_frames": 4447,
+          "vector_rmse": 0.06891430327080617,
+          "active_vector_rmse": 0.08954575418191346,
+          "dominant_agreement": 0.8901356350184957,
+          "active_dominant_agreement": 0.805711715763436,
+          "reference_mean_movement": 0.040777571154780375,
+          "decoded_mean_movement": 0.04809536044733423,
+          "reference_switches": 207,
+          "decoded_switches": 229
+        },
+        "16": {
+          "frames": 8110,
+          "reference_active_frames": 4447,
+          "vector_rmse": 0.04287757121157432,
+          "active_vector_rmse": 0.05440527894644229,
+          "dominant_agreement": 0.9219482120838471,
+          "active_dominant_agreement": 0.8608050371036654,
+          "reference_mean_movement": 0.040777571154780375,
+          "decoded_mean_movement": 0.0433501948649981,
+          "reference_switches": 207,
+          "decoded_switches": 213
+        },
+        "24": {
+          "frames": 8110,
+          "reference_active_frames": 4447,
+          "vector_rmse": 0.03128521202697147,
+          "active_vector_rmse": 0.036120692705584274,
+          "dominant_agreement": 0.9472256473489519,
+          "active_dominant_agreement": 0.9084776253654149,
+          "reference_mean_movement": 0.040777571154780375,
+          "decoded_mean_movement": 0.04200125944035273,
+          "reference_switches": 207,
+          "decoded_switches": 193
+        },
+        "48": {
+          "frames": 8110,
+          "reference_active_frames": 4447,
+          "vector_rmse": 0.021998984014686782,
+          "active_vector_rmse": 0.024404487699279283,
+          "dominant_agreement": 0.9663378545006165,
+          "active_dominant_agreement": 0.9386102990780302,
+          "reference_mean_movement": 0.040777571154780375,
+          "decoded_mean_movement": 0.04218634960526145,
+          "reference_switches": 207,
+          "decoded_switches": 191
+        }
+      },
+      "onnx": {
+        "12": {
+          "frames": 8110,
+          "reference_active_frames": 7047,
+          "vector_rmse": 0.1311486972344319,
+          "active_vector_rmse": 0.13164296408831017,
+          "dominant_agreement": 0.6187422934648582,
+          "active_dominant_agreement": 0.6009649496239534,
+          "reference_mean_movement": 0.5344385699978089,
+          "decoded_mean_movement": 0.6071605363249921,
+          "reference_switches": 2473,
+          "decoded_switches": 2774
+        },
+        "16": {
+          "frames": 8110,
+          "reference_active_frames": 7047,
+          "vector_rmse": 0.1191158311804257,
+          "active_vector_rmse": 0.11942950678498555,
+          "dominant_agreement": 0.6573366214549938,
+          "active_dominant_agreement": 0.6392791258691641,
+          "reference_mean_movement": 0.5344385699978089,
+          "decoded_mean_movement": 0.5746618795284468,
+          "reference_switches": 2473,
+          "decoded_switches": 2641
+        },
+        "24": {
+          "frames": 8110,
+          "reference_active_frames": 7047,
+          "vector_rmse": 0.1029483661648858,
+          "active_vector_rmse": 0.10355202728797053,
+          "dominant_agreement": 0.707521578298397,
+          "active_dominant_agreement": 0.6895132680573294,
+          "reference_mean_movement": 0.5344385699978089,
+          "decoded_mean_movement": 0.5582304348700159,
+          "reference_switches": 2473,
+          "decoded_switches": 2590
+        },
+        "48": {
+          "frames": 8110,
+          "reference_active_frames": 7047,
+          "vector_rmse": 0.0870852702152343,
+          "active_vector_rmse": 0.08678142919591667,
+          "dominant_agreement": 0.7632552404438965,
+          "active_dominant_agreement": 0.7520930892578402,
+          "reference_mean_movement": 0.5344385699978089,
+          "decoded_mean_movement": 0.5454062280875386,
+          "reference_switches": 2473,
+          "decoded_switches": 2526
+        }
+      }
+    },
+    "timeline_1320-122617-0010": {
+      "ovr_s1": {
+        "12": {
+          "frames": 1000,
+          "reference_active_frames": 875,
+          "vector_rmse": 0.044903582518036556,
+          "active_vector_rmse": 0.046315616967820515,
+          "dominant_agreement": 0.913,
+          "active_dominant_agreement": 0.9028571428571428,
+          "reference_mean_movement": 0.2733435500968603,
+          "decoded_mean_movement": 0.2847997953970674,
+          "reference_switches": 146,
+          "decoded_switches": 143
+        },
+        "16": {
+          "frames": 1000,
+          "reference_active_frames": 875,
+          "vector_rmse": 0.034205247600818174,
+          "active_vector_rmse": 0.03468334765297322,
+          "dominant_agreement": 0.923,
+          "active_dominant_agreement": 0.9142857142857143,
+          "reference_mean_movement": 0.2733435500968603,
+          "decoded_mean_movement": 0.27448997933489466,
+          "reference_switches": 146,
+          "decoded_switches": 135
+        },
+        "24": {
+          "frames": 1000,
+          "reference_active_frames": 875,
+          "vector_rmse": 0.021420262368421414,
+          "active_vector_rmse": 0.020504304873242587,
+          "dominant_agreement": 0.966,
+          "active_dominant_agreement": 0.9634285714285714,
+          "reference_mean_movement": 0.2733435500968603,
+          "decoded_mean_movement": 0.27296985425246634,
+          "reference_switches": 146,
+          "decoded_switches": 139
+        },
+        "48": {
+          "frames": 1000,
+          "reference_active_frames": 875,
+          "vector_rmse": 0.01679323147305799,
+          "active_vector_rmse": 0.014173209428614289,
+          "dominant_agreement": 0.972,
+          "active_dominant_agreement": 0.9702857142857143,
+          "reference_mean_movement": 0.2733435500968603,
+          "decoded_mean_movement": 0.2715418615224901,
+          "reference_switches": 146,
+          "decoded_switches": 138
+        }
+      },
+      "ovr_s75": {
+        "12": {
+          "frames": 1000,
+          "reference_active_frames": 877,
+          "vector_rmse": 0.029430094755388318,
+          "active_vector_rmse": 0.029959876994276203,
+          "dominant_agreement": 0.937,
+          "active_dominant_agreement": 0.9293044469783353,
+          "reference_mean_movement": 0.1806266935875145,
+          "decoded_mean_movement": 0.1798204295777488,
+          "reference_switches": 113,
+          "decoded_switches": 110
+        },
+        "16": {
+          "frames": 1000,
+          "reference_active_frames": 877,
+          "vector_rmse": 0.021804179637489776,
+          "active_vector_rmse": 0.022356787727247144,
+          "dominant_agreement": 0.941,
+          "active_dominant_agreement": 0.9338654503990877,
+          "reference_mean_movement": 0.1806266935875145,
+          "decoded_mean_movement": 0.179422116633857,
+          "reference_switches": 113,
+          "decoded_switches": 108
+        },
+        "24": {
+          "frames": 1000,
+          "reference_active_frames": 877,
+          "vector_rmse": 0.011096362187941158,
+          "active_vector_rmse": 0.01184897619842893,
+          "dominant_agreement": 0.972,
+          "active_dominant_agreement": 0.9680729760547321,
+          "reference_mean_movement": 0.1806266935875145,
+          "decoded_mean_movement": 0.17989611990735754,
+          "reference_switches": 113,
+          "decoded_switches": 111
+        },
+        "48": {
+          "frames": 1000,
+          "reference_active_frames": 877,
+          "vector_rmse": 0.010723199842974257,
+          "active_vector_rmse": 0.009241964142090888,
+          "dominant_agreement": 0.982,
+          "active_dominant_agreement": 0.9806157354618016,
+          "reference_mean_movement": 0.1806266935875145,
+          "decoded_mean_movement": 0.17994231528429538,
+          "reference_switches": 113,
+          "decoded_switches": 110
+        }
+      },
+      "onnx": {
+        "12": {
+          "frames": 1000,
+          "reference_active_frames": 905,
+          "vector_rmse": 0.108413803412054,
+          "active_vector_rmse": 0.10737730305061255,
+          "dominant_agreement": 0.753,
+          "active_dominant_agreement": 0.7491712707182321,
+          "reference_mean_movement": 0.5603124980363253,
+          "decoded_mean_movement": 0.5806118178504523,
+          "reference_switches": 286,
+          "decoded_switches": 297
+        },
+        "16": {
+          "frames": 1000,
+          "reference_active_frames": 905,
+          "vector_rmse": 0.09567278123723752,
+          "active_vector_rmse": 0.09342216641721622,
+          "dominant_agreement": 0.772,
+          "active_dominant_agreement": 0.7690607734806629,
+          "reference_mean_movement": 0.5603124980363253,
+          "decoded_mean_movement": 0.5765953962321607,
+          "reference_switches": 286,
+          "decoded_switches": 301
+        },
+        "24": {
+          "frames": 1000,
+          "reference_active_frames": 905,
+          "vector_rmse": 0.07541869891853661,
+          "active_vector_rmse": 0.07100735427662494,
+          "dominant_agreement": 0.829,
+          "active_dominant_agreement": 0.830939226519337,
+          "reference_mean_movement": 0.5603124980363253,
+          "decoded_mean_movement": 0.5567382267466654,
+          "reference_switches": 286,
+          "decoded_switches": 288
+        },
+        "48": {
+          "frames": 1000,
+          "reference_active_frames": 905,
+          "vector_rmse": 0.05310217468943807,
+          "active_vector_rmse": 0.05189359173521366,
+          "dominant_agreement": 0.903,
+          "active_dominant_agreement": 0.9005524861878453,
+          "reference_mean_movement": 0.5603124980363253,
+          "decoded_mean_movement": 0.5559231519668665,
+          "reference_switches": 286,
+          "decoded_switches": 275
+        }
+      }
+    },
+    "phase_probe": {
+      "ovr_s1": {
+        "12": {
+          "frames": 2220,
+          "reference_active_frames": 1686,
+          "vector_rmse": 0.11891813135799033,
+          "active_vector_rmse": 0.11994729989365693,
+          "dominant_agreement": 0.6711711711711712,
+          "active_dominant_agreement": 0.6073546856465006,
+          "reference_mean_movement": 0.09840635621192806,
+          "decoded_mean_movement": 0.28194049091396056,
+          "reference_switches": 136,
+          "decoded_switches": 403
+        },
+        "16": {
+          "frames": 2220,
+          "reference_active_frames": 1686,
+          "vector_rmse": 0.0981812543468511,
+          "active_vector_rmse": 0.09603514278062468,
+          "dominant_agreement": 0.7734234234234234,
+          "active_dominant_agreement": 0.7247924080664294,
+          "reference_mean_movement": 0.09840635621192806,
+          "decoded_mean_movement": 0.2308437687945096,
+          "reference_switches": 136,
+          "decoded_switches": 314
+        },
+        "24": {
+          "frames": 2220,
+          "reference_active_frames": 1686,
+          "vector_rmse": 0.08595984489946538,
+          "active_vector_rmse": 0.08482780667539351,
+          "dominant_agreement": 0.8463963963963964,
+          "active_dominant_agreement": 0.8149466192170819,
+          "reference_mean_movement": 0.09840635621192806,
+          "decoded_mean_movement": 0.18711276811449984,
+          "reference_switches": 136,
+          "decoded_switches": 163
+        },
+        "48": {
+          "frames": 2220,
+          "reference_active_frames": 1686,
+          "vector_rmse": 0.055904345677345146,
+          "active_vector_rmse": 0.05732755890486748,
+          "dominant_agreement": 0.8783783783783784,
+          "active_dominant_agreement": 0.8451957295373665,
+          "reference_mean_movement": 0.09840635621192806,
+          "decoded_mean_movement": 0.13923863546787626,
+          "reference_switches": 136,
+          "decoded_switches": 128
+        }
+      },
+      "ovr_s75": {
+        "12": {
+          "frames": 2220,
+          "reference_active_frames": 1676,
+          "vector_rmse": 0.10314796371044713,
+          "active_vector_rmse": 0.09937952842155826,
+          "dominant_agreement": 0.6720720720720721,
+          "active_dominant_agreement": 0.6068019093078759,
+          "reference_mean_movement": 0.0498061809130092,
+          "decoded_mean_movement": 0.1027626297724283,
+          "reference_switches": 65,
+          "decoded_switches": 197
+        },
+        "16": {
+          "frames": 2220,
+          "reference_active_frames": 1676,
+          "vector_rmse": 0.08703934268296938,
+          "active_vector_rmse": 0.07991735368564784,
+          "dominant_agreement": 0.7891891891891892,
+          "active_dominant_agreement": 0.75,
+          "reference_mean_movement": 0.0498061809130092,
+          "decoded_mean_movement": 0.07927916681098301,
+          "reference_switches": 65,
+          "decoded_switches": 110
+        },
+        "24": {
+          "frames": 2220,
+          "reference_active_frames": 1676,
+          "vector_rmse": 0.08018416563594959,
+          "active_vector_rmse": 0.07417815503258517,
+          "dominant_agreement": 0.8450450450450451,
+          "active_dominant_agreement": 0.8156324582338902,
+          "reference_mean_movement": 0.0498061809130092,
+          "decoded_mean_movement": 0.0672905675129097,
+          "reference_switches": 65,
+          "decoded_switches": 69
+        },
+        "48": {
+          "frames": 2220,
+          "reference_active_frames": 1676,
+          "vector_rmse": 0.04850168292435351,
+          "active_vector_rmse": 0.04898016735160936,
+          "dominant_agreement": 0.9009009009009009,
+          "active_dominant_agreement": 0.8717183770883055,
+          "reference_mean_movement": 0.0498061809130092,
+          "decoded_mean_movement": 0.06308971019890514,
+          "reference_switches": 65,
+          "decoded_switches": 62
+        }
+      },
+      "onnx": {
+        "12": {
+          "frames": 2220,
+          "reference_active_frames": 791,
+          "vector_rmse": 0.25397983324860224,
+          "active_vector_rmse": 0.30287237201259903,
+          "dominant_agreement": 0.31351351351351353,
+          "active_dominant_agreement": 0.0897597977243995,
+          "reference_mean_movement": 0.05034427741870253,
+          "decoded_mean_movement": 0.27234292112749414,
+          "reference_switches": 59,
+          "decoded_switches": 298
+        },
+        "16": {
+          "frames": 2220,
+          "reference_active_frames": 791,
+          "vector_rmse": 0.2588057931749074,
+          "active_vector_rmse": 0.28712641093833424,
+          "dominant_agreement": 0.29324324324324325,
+          "active_dominant_agreement": 0.15423514538558786,
+          "reference_mean_movement": 0.05034427741870253,
+          "decoded_mean_movement": 0.19031279649775595,
+          "reference_switches": 59,
+          "decoded_switches": 243
+        },
+        "24": {
+          "frames": 2220,
+          "reference_active_frames": 791,
+          "vector_rmse": 0.26148303972138565,
+          "active_vector_rmse": 0.27743133054118446,
+          "dominant_agreement": 0.3076576576576577,
+          "active_dominant_agreement": 0.24525916561314792,
+          "reference_mean_movement": 0.05034427741870253,
+          "decoded_mean_movement": 0.16748471056889191,
+          "reference_switches": 59,
+          "decoded_switches": 183
+        },
+        "48": {
+          "frames": 2220,
+          "reference_active_frames": 791,
+          "vector_rmse": 0.17465852982249994,
+          "active_vector_rmse": 0.2355082567014834,
+          "dominant_agreement": 0.6986486486486486,
+          "active_dominant_agreement": 0.393173198482933,
+          "reference_mean_movement": 0.05034427741870253,
+          "decoded_mean_movement": 0.10312747912518236,
+          "reference_switches": 59,
+          "decoded_switches": 89
+        }
+      }
+    }
+  }
+}

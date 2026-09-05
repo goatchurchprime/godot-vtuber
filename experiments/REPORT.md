@@ -95,3 +95,12 @@ the traces exactly. This is compatible with recurrent state or slow adaptation
 to signal or speaker characteristics. A follow-up should present an identical
 target after controlled histories from the same and different synthetic
 "speakers", separating immediate acoustic support from adaptive context.
+
+Opus robustness testing then showed that OVR's phase sensitivity is not an
+obvious practical weakness on ordinary compressed speech. At 24 kbit/s its
+dominant output agreed with the original-PCM run on roughly 94–97% of real
+speech frames, versus 71–83% for the present streaming MEL/ONNX model. OVR did
+degrade more on deliberately phase-sensitive synthetic inputs. The current MEL
+representation therefore cannot be presumed codec-stable merely because it
+discards phase; normalization, training distribution and classifier stability
+must be evaluated as part of the complete frontend.
