@@ -7,6 +7,10 @@ order; later experiments may refine rather than replace earlier conclusions.
 1. [Temporal memory in repeated speech](001-temporal-memory/README.md)
 2. [Recorded sustained vowels, level and pitch](002-recorded-vowels/README.md)
 3. [OVRLipSync smoothing sweep](003-smoothing-sweep/README.md)
+4. [Can OVR smoothing be reproduced externally?](004-external-smoothing-model/README.md)
+
+For a short narrative account of the complete investigation, read
+[A low-cost route to pleasing real-time visemes](REPORT.md).
 
 The `private/` directory inside each experiment contains local source audio and
 full-resolution traces. Git ignores those directories because experiment 002

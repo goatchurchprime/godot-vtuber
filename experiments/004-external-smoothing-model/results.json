@@ -1,0 +1,39 @@
+{
+  "schema": "external_smoothing_fit_v1",
+  "source_smoothing": 1,
+  "model": "raw estimate from smoothing 1, followed by one-pole causal filter",
+  "rapid_speech_interval_s": [
+    62.8,
+    77.0
+  ],
+  "fits": {
+    "25": {
+      "best_previous_weight": 0.2567,
+      "rmse_all": 0.0075850457238251815,
+      "rmse_rapid_speech": 0.01021597010234057,
+      "unfiltered_rmse_all": 0.011466859492560752,
+      "unfiltered_rmse_rapid_speech": 0.017705334823285117
+    },
+    "50": {
+      "best_previous_weight": 0.4852,
+      "rmse_all": 0.009140626302499736,
+      "rmse_rapid_speech": 0.013773909056696308,
+      "unfiltered_rmse_all": 0.020752698921968262,
+      "unfiltered_rmse_rapid_speech": 0.03615074730978583
+    },
+    "75": {
+      "best_previous_weight": 0.737,
+      "rmse_all": 0.013071118026548582,
+      "rmse_rapid_speech": 0.021448442893999158,
+      "unfiltered_rmse_all": 0.03911634990797745,
+      "unfiltered_rmse_rapid_speech": 0.07196166442457132
+    },
+    "100": {
+      "best_previous_weight": 0.9873,
+      "rmse_all": 0.039740384826547404,
+      "rmse_rapid_speech": 0.051029854957762674,
+      "unfiltered_rmse_all": 0.12929485717608963,
+      "unfiltered_rmse_rapid_speech": 0.17611318255570702
+    }
+  }
+}
