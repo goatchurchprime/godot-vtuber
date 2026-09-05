@@ -10,6 +10,7 @@ order; later experiments may refine rather than replace earlier conclusions.
 4. [Can OVR smoothing be reproduced externally?](004-external-smoothing-model/README.md)
 5. Synthetic support probe (analysis in progress)
 6. [Does OVRLipSync retain phase information?](006-phase-sensitivity/README.md)
+7. [OVR acoustic support and cold-start state](007-acoustic-support/README.md)
 
 For a short narrative account of the complete investigation, read
 [A low-cost route to pleasing real-time visemes](REPORT.md).

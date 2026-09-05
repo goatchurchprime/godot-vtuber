@@ -85,3 +85,13 @@ The following model experiment should therefore compare log-MEL with
 phase-aware STFT and small raw-waveform frontends while holding receptive
 support, data split and the winning postprocessor fixed. That separation will
 reveal whether discarded phase materially affects held-out viseme recognition.
+
+Cold-context duration probes further showed that OVR does not behave like a
+fixed short-window classifier followed only by output smoothing. Stationary
+synthetic inputs took roughly 180–340 ms to settle. For a two-tone input, a
+change confined to its 5 ms onset selected a different stable output mixture
+that persisted for the one-second trial; reversing all trial order reproduced
+the traces exactly. This is compatible with recurrent state or slow adaptation
+to signal or speaker characteristics. A follow-up should present an identical
+target after controlled histories from the same and different synthetic
+"speakers", separating immediate acoustic support from adaptive context.

@@ -24,6 +24,17 @@ func _option(name: String, fallback: String) -> String:
 	return fallback
 
 
+func _configured_backend(frame_size: int, library_dir: String, smoothing: int) -> Object:
+	var backend: Object = ClassDB.instantiate("OvrLipSyncBackend")
+	assert(backend != null and bool(backend.call("is_available")), "OVRLipSync was not compiled in")
+	var error: int = backend.call("configure", SAMPLE_RATE, frame_size, library_dir, 2, true)
+	assert(error == OK, str(backend.call("get_status")))
+	if smoothing >= 1:
+		error = backend.call("set_smoothing", smoothing)
+		assert(error == OK, str(backend.call("get_status")))
+	return backend
+
+
 func _run() -> void:
 	if not ClassDB.class_exists("OvrLipSyncBackend"):
 		var load_error := GDExtensionManager.load_extension("res://addons/twovoip/twovoip.gdextension")
@@ -35,14 +46,9 @@ func _run() -> void:
 	var output_path := _option("output", DEFAULT_OUTPUT)
 	var paced := _option("paced", "true") == "true"
 	var smoothing := int(_option("smoothing", "-1"))
-	var backend: Object = ClassDB.instantiate("OvrLipSyncBackend")
-	assert(backend != null and bool(backend.call("is_available")), "OVRLipSync was not compiled in")
+	var reset_after_silence_ms := int(_option("reset-after-silence-ms", "0"))
 	var library_dir := ProjectSettings.globalize_path("res://addons/twovoip/libs")
-	var error: int = backend.call("configure", SAMPLE_RATE, frame_size, library_dir, 2, true)
-	assert(error == OK, str(backend.call("get_status")))
-	if smoothing >= 1:
-		error = backend.call("set_smoothing", smoothing)
-		assert(error == OK, str(backend.call("get_status")))
+	var backend := _configured_backend(frame_size, library_dir, smoothing)
 	# Read the source WAV itself. A normal Godot import may QOA-compress it, in
 	# which case AudioStreamWAV.data contains compressed bytes rather than PCM.
 	var stream := AudioStreamWAV.load_from_file(ProjectSettings.globalize_path(fixture_path))
@@ -59,12 +65,37 @@ func _run() -> void:
 	var trace_frames: Array = []
 	var timing_usec: Array[int] = []
 	var warmup_frames := ceili(WARMUP_SECONDS * 1000.0 / frame_ms)
+	var silent_frames := 0
+	var reset_during_current_silence := false
 	for frame_index in frame_count:
 		var pcm := PackedFloat32Array()
 		pcm.resize(frame_size)
 		var byte_offset := frame_index * frame_size * 2
 		for sample_index in frame_size:
 			pcm[sample_index] = sample_bytes.decode_s16(byte_offset + sample_index * 2) / 32768.0
+		var frame_is_silent := true
+		for sample in pcm:
+			if sample != 0.0:
+				frame_is_silent = false
+				break
+		if frame_is_silent:
+			silent_frames += 1
+		else:
+			silent_frames = 0
+			reset_during_current_silence = false
+		var context_reset := false
+		if (
+			reset_after_silence_ms > 0
+			and not reset_during_current_silence
+			and silent_frames * frame_ms >= reset_after_silence_ms
+		):
+			var reset_error: int = backend.call("configure", SAMPLE_RATE, frame_size, library_dir, 2, true)
+			assert(reset_error == OK, str(backend.call("get_status")))
+			if smoothing >= 1:
+				reset_error = backend.call("set_smoothing", smoothing)
+				assert(reset_error == OK, str(backend.call("get_status")))
+			reset_during_current_silence = true
+			context_reset = true
 		var started_usec := Time.get_ticks_usec()
 		assert(bool(backend.call("push_pcm", pcm)), str(backend.call("get_status")))
 		var elapsed_usec := int(Time.get_ticks_usec() - started_usec)
@@ -74,6 +105,7 @@ func _run() -> void:
 			"input_start_s": frame_index * frame_ms / 1000.0,
 			"input_end_s": (frame_index + 1) * frame_ms / 1000.0,
 			"reported_frame_delay_ms": int(backend.call("get_frame_delay_ms")),
+			"context_reset": context_reset,
 			"weights": Array(backend.call("get_levels")),
 		})
 		if paced:
@@ -95,6 +127,7 @@ func _run() -> void:
 		"weight_state": "SDK output; persistent context",
 		"smoothing": "sdk_default" if smoothing < 1 else smoothing,
 		"paced": paced,
+		"reset_after_silence_ms": reset_after_silence_ms,
 		"timing_warmup_s": WARMUP_SECONDS,
 		"timing": {
 			"frames": timing_usec.size(),
