@@ -1,0 +1,64 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1050" height="650" viewBox="0 0 1050 650">
+<rect width="100%" height="100%" fill="#10131c"/>
+<style>text{font-family:sans-serif;fill:#e4e8f0;font-size:13px}.title{font-size:22px;font-weight:bold}.small{font-size:11px}</style>
+<text class="title" x="30" y="35">Experiment 003 — OVRLipSync smoothing sweep</text>
+<text x="80" y="65" font-size="16">Mean frame-to-frame L1 movement (lower = smoother)</text>
+<line x1="80" y1="280.0" x2="980" y2="280.0" stroke="#465063"/><text x="72" y="284.0" text-anchor="end">0.000</text>
+<line x1="80" y1="230.0" x2="980" y2="230.0" stroke="#465063"/><text x="72" y="234.0" text-anchor="end">0.025</text>
+<line x1="80" y1="180.0" x2="980" y2="180.0" stroke="#465063"/><text x="72" y="184.0" text-anchor="end">0.050</text>
+<line x1="80" y1="130.00000000000003" x2="980" y2="130.00000000000003" stroke="#465063"/><text x="72" y="134.00000000000003" text-anchor="end">0.075</text>
+<line x1="80" y1="80.0" x2="980" y2="80.0" stroke="#465063"/><text x="72" y="84.0" text-anchor="end">0.100</text>
+<rect x="125" y="105.26728810625784" width="100" height="174.73271189374216" fill="#ef476f"/><text x="175.0" y="302" text-anchor="middle">1</text><text x="175.0" y="98.26728810625784" text-anchor="middle">0.0874</text>
+<rect x="270" y="136.78336249946065" width="100" height="143.21663750053935" fill="#f78c6b"/><text x="320.0" y="302" text-anchor="middle">25</text><text x="320.0" y="129.78336249946065" text-anchor="middle">0.0716</text>
+<rect x="415" y="165.71271853132194" width="100" height="114.28728146867806" fill="#ffd166"/><text x="465.0" y="302" text-anchor="middle">50</text><text x="465.0" y="158.71271853132194" text-anchor="middle">0.0571</text>
+<rect x="560" y="198.44485769043925" width="100" height="81.55514230956075" fill="#83d483"/><text x="610.0" y="302" text-anchor="middle">75</text><text x="610.0" y="191.44485769043925" text-anchor="middle">0.0408</text>
+<rect x="705" y="265.6524170037657" width="100" height="14.347582996234266" fill="#38b6c4"/><text x="755.0" y="302" text-anchor="middle">100</text><text x="755.0" y="258.6524170037657" text-anchor="middle">0.0072</text>
+<rect x="850" y="190.757170042349" width="100" height="89.24282995765098" fill="#b388eb"/><text x="900.0" y="302" text-anchor="middle">SDK default</text><text x="900.0" y="183.757170042349" text-anchor="middle">0.0446</text>
+<text x="80" y="365" font-size="16">Dominant-class switches during sustained vowels</text>
+<text x="145" y="612" text-anchor="middle">aa</text>
+<rect x="80" y="583.3333333333334" width="20" height="6.666666666666667" fill="#ef476f"/><title>aa, 1: 4</title>
+<rect x="102" y="583.3333333333334" width="20" height="6.666666666666667" fill="#f78c6b"/><title>aa, 25: 4</title>
+<rect x="124" y="586.6666666666666" width="20" height="3.3333333333333335" fill="#ffd166"/><title>aa, 50: 2</title>
+<rect x="146" y="586.6666666666666" width="20" height="3.3333333333333335" fill="#83d483"/><title>aa, 75: 2</title>
+<rect x="168" y="588.3333333333334" width="20" height="1.6666666666666667" fill="#38b6c4"/><title>aa, 100: 1</title>
+<rect x="190" y="586.6666666666666" width="20" height="3.3333333333333335" fill="#b388eb"/><title>aa, SDK default: 2</title>
+<text x="315" y="612" text-anchor="middle">E</text>
+<rect x="250" y="585.0" width="20" height="5.0" fill="#ef476f"/><title>E, 1: 3</title>
+<rect x="272" y="585.0" width="20" height="5.0" fill="#f78c6b"/><title>E, 25: 3</title>
+<rect x="294" y="585.0" width="20" height="5.0" fill="#ffd166"/><title>E, 50: 3</title>
+<rect x="316" y="588.3333333333334" width="20" height="1.6666666666666667" fill="#83d483"/><title>E, 75: 1</title>
+<rect x="338" y="588.3333333333334" width="20" height="1.6666666666666667" fill="#38b6c4"/><title>E, 100: 1</title>
+<rect x="360" y="588.3333333333334" width="20" height="1.6666666666666667" fill="#b388eb"/><title>E, SDK default: 1</title>
+<text x="485" y="612" text-anchor="middle">ih</text>
+<rect x="420" y="588.3333333333334" width="20" height="1.6666666666666667" fill="#ef476f"/><title>ih, 1: 1</title>
+<rect x="442" y="588.3333333333334" width="20" height="1.6666666666666667" fill="#f78c6b"/><title>ih, 25: 1</title>
+<rect x="464" y="588.3333333333334" width="20" height="1.6666666666666667" fill="#ffd166"/><title>ih, 50: 1</title>
+<rect x="486" y="588.3333333333334" width="20" height="1.6666666666666667" fill="#83d483"/><title>ih, 75: 1</title>
+<rect x="508" y="588.3333333333334" width="20" height="1.6666666666666667" fill="#38b6c4"/><title>ih, 100: 1</title>
+<rect x="530" y="588.3333333333334" width="20" height="1.6666666666666667" fill="#b388eb"/><title>ih, SDK default: 1</title>
+<text x="655" y="612" text-anchor="middle">oh</text>
+<rect x="590" y="480.0" width="20" height="110.0" fill="#ef476f"/><title>oh, 1: 66</title>
+<rect x="612" y="496.6666666666667" width="20" height="93.33333333333333" fill="#f78c6b"/><title>oh, 25: 56</title>
+<rect x="634" y="506.6666666666667" width="20" height="83.33333333333333" fill="#ffd166"/><title>oh, 50: 50</title>
+<rect x="656" y="535.0" width="20" height="55.0" fill="#83d483"/><title>oh, 75: 33</title>
+<rect x="678" y="581.6666666666666" width="20" height="8.333333333333334" fill="#38b6c4"/><title>oh, 100: 5</title>
+<rect x="700" y="526.6666666666666" width="20" height="63.333333333333336" fill="#b388eb"/><title>oh, SDK default: 38</title>
+<text x="825" y="612" text-anchor="middle">ou</text>
+<rect x="760" y="401.66666666666663" width="20" height="188.33333333333334" fill="#ef476f"/><title>ou, 1: 113</title>
+<rect x="782" y="450.0" width="20" height="140.0" fill="#f78c6b"/><title>ou, 25: 84</title>
+<rect x="804" y="480.0" width="20" height="110.0" fill="#ffd166"/><title>ou, 50: 66</title>
+<rect x="826" y="518.3333333333334" width="20" height="71.66666666666667" fill="#83d483"/><title>ou, 75: 43</title>
+<rect x="848" y="586.6666666666666" width="20" height="3.3333333333333335" fill="#38b6c4"/><title>ou, 100: 2</title>
+<rect x="870" y="516.6666666666666" width="20" height="73.33333333333333" fill="#b388eb"/><title>ou, SDK default: 44</title>
+<line x1="80" y1="590.0" x2="980" y2="590.0" stroke="#465063" opacity=".6"/><text x="72" y="594.0" text-anchor="end">0</text>
+<line x1="80" y1="540.0" x2="980" y2="540.0" stroke="#465063" opacity=".6"/><text x="72" y="544.0" text-anchor="end">30</text>
+<line x1="80" y1="490.0" x2="980" y2="490.0" stroke="#465063" opacity=".6"/><text x="72" y="494.0" text-anchor="end">60</text>
+<line x1="80" y1="440.0" x2="980" y2="440.0" stroke="#465063" opacity=".6"/><text x="72" y="444.0" text-anchor="end">90</text>
+<line x1="80" y1="390.0" x2="980" y2="390.0" stroke="#465063" opacity=".6"/><text x="72" y="394.0" text-anchor="end">120</text>
+<rect x="80" y="625" width="14" height="14" fill="#ef476f"/><text class="small" x="100" y="637">1</text>
+<rect x="230" y="625" width="14" height="14" fill="#f78c6b"/><text class="small" x="250" y="637">25</text>
+<rect x="380" y="625" width="14" height="14" fill="#ffd166"/><text class="small" x="400" y="637">50</text>
+<rect x="530" y="625" width="14" height="14" fill="#83d483"/><text class="small" x="550" y="637">75</text>
+<rect x="680" y="625" width="14" height="14" fill="#38b6c4"/><text class="small" x="700" y="637">100</text>
+<rect x="830" y="625" width="14" height="14" fill="#b388eb"/><text class="small" x="850" y="637">SDK default</text>
+</svg>
