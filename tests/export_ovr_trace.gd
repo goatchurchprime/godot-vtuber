@@ -38,8 +38,16 @@ func _run() -> void:
 	var library_dir := ProjectSettings.globalize_path("res://addons/twovoip/libs")
 	var error: int = backend.call("configure", SAMPLE_RATE, frame_size, library_dir, 2, true)
 	assert(error == OK, str(backend.call("get_status")))
-	var stream := load(fixture_path) as AudioStreamWAV
-	assert(stream != null and stream.mix_rate == SAMPLE_RATE and not stream.stereo, "fixture must be 16 kHz mono WAV")
+	# Read the source WAV itself. A normal Godot import may QOA-compress it, in
+	# which case AudioStreamWAV.data contains compressed bytes rather than PCM.
+	var stream := AudioStreamWAV.load_from_file(ProjectSettings.globalize_path(fixture_path))
+	assert(
+		stream != null
+		and stream.format == AudioStreamWAV.FORMAT_16_BITS
+		and stream.mix_rate == SAMPLE_RATE
+		and not stream.stereo,
+		"fixture must be 16-bit, 16 kHz mono PCM WAV"
+	)
 	var sample_bytes := stream.data
 	var frame_count := int(sample_bytes.size() / 2 / frame_size)
 	assert(frame_count > 0, "fixture contains no complete frames")
