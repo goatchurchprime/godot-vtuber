@@ -2,7 +2,7 @@
   "schema": "ovrlipsync_whisper_summary_v1",
   "recording_duration_s": 54.27,
   "active_threshold_dbfs": -55,
-  "microphone_geometry_controlled": false,
+  "microphone_geometry": "uncontrolled",
   "conditions": [
     {
       "condition": "original level",

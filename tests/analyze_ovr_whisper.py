@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """Graph private OVR whisper traces without publishing the source audio."""
 
+import argparse
 import json
 import math
 import struct
@@ -14,8 +15,8 @@ NAMES = ["sil", "PP", "FF", "TH", "DD", "kk", "CH", "SS", "nn", "RR", "aa", "E",
 COLORS = ["#94a3b8", "#ef4444", "#fb7185", "#f59e0b", "#fde047", "#84cc16", "#22c55e", "#14b8a6", "#06b6d4", "#3b82f6", "#6366f1", "#8b5cf6", "#d946ef", "#f472b6", "#a16207"]
 
 
-def load_wav():
-    with wave.open(str(PRIVATE / "julian_voice_whisper_16k.wav"), "rb") as wav:
+def load_wav(path):
+    with wave.open(str(path), "rb") as wav:
         assert (wav.getnchannels(), wav.getsampwidth(), wav.getframerate()) == (1, 2, 16000)
         raw = wav.readframes(wav.getnframes())
     return [v / 32768.0 for v in struct.unpack(f"<{len(raw) // 2}h", raw)]
@@ -36,10 +37,16 @@ def periodicity(frame):
 
 
 def main():
-    pcm = load_wav()
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--stem", default="julian_voice_whisper")
+    parser.add_argument("--output-stem", default="")
+    parser.add_argument("--geometry", choices=("controlled", "uncontrolled", "headset-fixed"), default="uncontrolled")
+    args = parser.parse_args()
+    output_stem = args.output_stem
+    pcm = load_wav(PRIVATE / f"{args.stem}_16k.wav")
     traces = [
-        ("original level", json.loads((PRIVATE / "julian_voice_whisper_s1.json").read_text())),
-        ("fixed +9 dB", json.loads((PRIVATE / "julian_voice_whisper_plus9db_s1.json").read_text())),
+        ("original level", json.loads((PRIVATE / f"{args.stem}_s1.json").read_text())),
+        ("fixed +9 dB", json.loads((PRIVATE / f"{args.stem}_plus9db_s1.json").read_text())),
     ]
     duration = len(pcm) / 16000
     width, left, plot_width = 1500, 92, 1360
@@ -54,7 +61,7 @@ def main():
         '<rect width="100%" height="100%" fill="#111827"/>',
         '<style>text{font-family:sans-serif;fill:#e5e7eb}.t{font-size:19px;font-weight:bold}.s{font-size:11px}.g{stroke:#64748b;stroke-width:1}</style>',
         '<text x="20" y="27" class="t">OVRLipSync response to whispered speech · smoothing 1 · 10 ms frames</text>',
-        '<text x="20" y="45" class="s">Exploratory recording: microphone orientation was not controlled; fixed gain changes level only.</text>',
+        f'<text x="20" y="45" class="s">Microphone geometry: {args.geometry}; fixed gain changes level only.</text>',
         f'<text x="16" y="{waveform_y + 18}" class="s">waveform</text>',
         f'<line x1="{left}" y1="{waveform_y + waveform_h / 2}" x2="{left + plot_width}" y2="{waveform_y + waveform_h / 2}" class="g"/>',
     ]
@@ -109,12 +116,14 @@ def main():
         x = left + plot_width * second / duration
         parts += [f'<line x1="{x}" y1="{waveform_y}" x2="{x}" y2="{scalar_y + scalar_h}" class="g" opacity=".25"/>', f'<text x="{x}" y="{height - 12}" text-anchor="middle" class="s">{second}s</text>']
     parts.append('</svg>')
-    (ROOT / "comparison.svg").write_text("\n".join(parts) + "\n")
-    (ROOT / "results.json").write_text(json.dumps({
+    svg_path = ROOT / (f"{output_stem}_comparison.svg" if output_stem else "comparison.svg")
+    json_path = ROOT / (f"{output_stem}_results.json" if output_stem else "results.json")
+    svg_path.write_text("\n".join(parts) + "\n")
+    json_path.write_text(json.dumps({
         "schema": "ovrlipsync_whisper_summary_v1",
         "recording_duration_s": duration,
         "active_threshold_dbfs": -55,
-        "microphone_geometry_controlled": False,
+        "microphone_geometry": args.geometry,
         "conditions": summaries,
     }, indent=2) + "\n")
     print("WHISPER_ANALYSIS_OK", summaries)

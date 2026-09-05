@@ -1,0 +1,65 @@
+{
+  "schema": "ovrlipsync_whisper_summary_v1",
+  "recording_duration_s": 64.900375,
+  "active_threshold_dbfs": -55,
+  "microphone_geometry": "headset-fixed",
+  "conditions": [
+    {
+      "condition": "original level",
+      "frames": 6490,
+      "active_frames": 3603,
+      "active_non_silence_fraction": 0.546489036913683,
+      "dominant_counts": {
+        "sil": 4319,
+        "TH": 48,
+        "aa": 47,
+        "kk": 37,
+        "ih": 269,
+        "ou": 227,
+        "E": 93,
+        "oh": 85,
+        "nn": 336,
+        "PP": 205,
+        "FF": 29,
+        "SS": 377,
+        "CH": 415,
+        "DD": 3
+      },
+      "timing": {
+        "average_ms": 0.220839751552795,
+        "frames": 6440,
+        "maximum_ms": 1.257,
+        "p95_ms": 0.353
+      }
+    },
+    {
+      "condition": "fixed +9 dB",
+      "frames": 6490,
+      "active_frames": 3603,
+      "active_non_silence_fraction": 0.7679711351651402,
+      "dominant_counts": {
+        "sil": 3439,
+        "TH": 33,
+        "PP": 97,
+        "SS": 383,
+        "aa": 379,
+        "DD": 13,
+        "kk": 44,
+        "E": 438,
+        "ih": 489,
+        "nn": 294,
+        "oh": 262,
+        "ou": 193,
+        "FF": 39,
+        "RR": 18,
+        "CH": 369
+      },
+      "timing": {
+        "average_ms": 0.251663664596273,
+        "frames": 6440,
+        "maximum_ms": 3.021,
+        "p95_ms": 0.493
+      }
+    }
+  ]
+}

@@ -2,7 +2,7 @@
 <rect width="100%" height="100%" fill="#111827"/>
 <style>text{font-family:sans-serif;fill:#e5e7eb}.t{font-size:19px;font-weight:bold}.s{font-size:11px}.g{stroke:#64748b;stroke-width:1}</style>
 <text x="20" y="27" class="t">OVRLipSync response to whispered speech · smoothing 1 · 10 ms frames</text>
-<text x="20" y="45" class="s">Exploratory recording: microphone orientation was not controlled; fixed gain changes level only.</text>
+<text x="20" y="45" class="s">Microphone geometry: uncontrolled; fixed gain changes level only.</text>
 <text x="16" y="76" class="s">waveform</text>
 <line x1="92" y1="99.0" x2="1452" y2="99.0" class="g"/>
 <line x1="92" y1="99.0" x2="92" y2="99.0" stroke="#cbd5e1"/>
