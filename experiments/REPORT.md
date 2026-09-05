@@ -75,7 +75,13 @@ while recording dominant-switch rate, transition delay, CPU cost and a blinded
 human preference. This directly advances the product: it tells us the smallest
 animation layer needed once any acoustic classifier supplies usable evidence.
 
-The following experiment should then reduce the acoustic input itself—testing
-short FFT/log-spectrum features against MEL—while holding the winning
-postprocessor fixed. That separation will reveal whether our remaining cost and
-errors come from the MEL representation or from classification.
+An initial phase probe has now established that OVR retains information absent
+from magnitude MEL. Bin-centred signals with identical spectral magnitudes but
+different phase produced materially different stable OVR mixtures, even when
+the exposed smoother was reduced to 1. This establishes phase sensitivity, not
+its usefulness for real speech.
+
+The following model experiment should therefore compare log-MEL with
+phase-aware STFT and small raw-waveform frontends while holding receptive
+support, data split and the winning postprocessor fixed. That separation will
+reveal whether discarded phase materially affects held-out viseme recognition.

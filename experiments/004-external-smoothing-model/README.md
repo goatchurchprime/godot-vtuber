@@ -54,3 +54,15 @@ it must not be interpreted as a guaranteed raw internal classifier output.
 For our own system, an inexpensive causal smoother can reproduce the principal
 artistic effect. We should measure its perceptual quality rather than attempting
 to clone every residual difference.
+
+### Gate and asymmetric-filter follow-up
+
+A normalized output floor did not improve the whole-trace smoothing-75 fit: its
+best fitted threshold was zero. A coarse asymmetric one-pole fit improved RMSE
+only from `0.01308` to `0.01268`, using slower attack (`0.80` previous output)
+and faster release (`0.65`). A simple post-smoothing gate is therefore not a
+good global description. Exact zeros already appear in the least-smoothed OVR
+trace, so sparsification may instead be part of the classifier output or an
+earlier nonlinear stage. A state-dependent closing rule remains plausible, but
+must be fitted specifically around utterance endings rather than inferred from
+the whole trace.

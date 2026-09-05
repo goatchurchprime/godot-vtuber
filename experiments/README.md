@@ -8,6 +8,8 @@ order; later experiments may refine rather than replace earlier conclusions.
 2. [Recorded sustained vowels, level and pitch](002-recorded-vowels/README.md)
 3. [OVRLipSync smoothing sweep](003-smoothing-sweep/README.md)
 4. [Can OVR smoothing be reproduced externally?](004-external-smoothing-model/README.md)
+5. Synthetic support probe (analysis in progress)
+6. [Does OVRLipSync retain phase information?](006-phase-sensitivity/README.md)
 
 For a short narrative account of the complete investigation, read
 [A low-cost route to pleasing real-time visemes](REPORT.md).
@@ -20,4 +22,3 @@ agreement.
 
 All software and prose in this experiment series were developed with OpenAI
 Codex assistance and reviewed interactively by the project owner.
-

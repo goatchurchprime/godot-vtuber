@@ -6,6 +6,11 @@
     62.8,
     77.0
   ],
+  "additional_models_for_smoothing_75": {
+    "one_pole_coarse_refit": {"previous_weight": 0.74, "rmse_all": 0.013079417129041664},
+    "one_pole_plus_normalized_floor": {"best_floor": 0.0, "previous_weight": 0.74, "rmse_all": 0.013079417129041664},
+    "asymmetric_one_pole_coarse_fit": {"rising_previous_weight": 0.8, "falling_previous_weight": 0.65, "rmse_all": 0.012682589534591738}
+  },
   "fits": {
     "25": {
       "best_previous_weight": 0.2567,
