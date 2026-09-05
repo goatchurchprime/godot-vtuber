@@ -1,0 +1,63 @@
+{
+  "schema": "ovrlipsync_whisper_summary_v1",
+  "recording_duration_s": 54.27,
+  "active_threshold_dbfs": -55,
+  "microphone_geometry_controlled": false,
+  "conditions": [
+    {
+      "condition": "original level",
+      "frames": 5427,
+      "active_frames": 2811,
+      "active_non_silence_fraction": 0.2991817858413376,
+      "dominant_counts": {
+        "sil": 4443,
+        "aa": 155,
+        "oh": 37,
+        "kk": 56,
+        "TH": 34,
+        "ih": 134,
+        "CH": 236,
+        "E": 114,
+        "nn": 15,
+        "PP": 21,
+        "SS": 167,
+        "ou": 2,
+        "FF": 13
+      },
+      "timing": {
+        "average_ms": 0.22138739073833,
+        "frames": 5377,
+        "maximum_ms": 0.806,
+        "p95_ms": 0.245
+      }
+    },
+    {
+      "condition": "fixed +9 dB",
+      "frames": 5427,
+      "active_frames": 2811,
+      "active_non_silence_fraction": 0.6673781572394166,
+      "dominant_counts": {
+        "sil": 3285,
+        "aa": 267,
+        "ou": 285,
+        "TH": 26,
+        "E": 237,
+        "kk": 52,
+        "PP": 70,
+        "ih": 370,
+        "CH": 198,
+        "oh": 221,
+        "nn": 187,
+        "DD": 1,
+        "SS": 175,
+        "FF": 53
+      },
+      "timing": {
+        "average_ms": 0.192774595499349,
+        "frames": 5377,
+        "maximum_ms": 0.396,
+        "p95_ms": 0.218
+      }
+    }
+  ]
+}

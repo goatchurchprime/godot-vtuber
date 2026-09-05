@@ -13,6 +13,7 @@ order; later experiments may refine rather than replace earlier conclusions.
 7. [OVR acoustic support and cold-start state](007-acoustic-support/README.md)
 8. [Viseme stability after Opus compression](008-opus-robustness/README.md)
 9. [Speech source/filter feature view](009-voice-features/README.md)
+10. [OVRLipSync response to whispered speech](010-whispered-speech/README.md)
 
 For a short narrative account of the complete investigation, read
 [A low-cost route to pleasing real-time visemes](REPORT.md).
