@@ -126,6 +126,10 @@ view is a presentation choice and remains separate from tracking. This
 milestone keeps the avatar/OBS camera fixed and does not enable XR rendering on
 the studio `SubViewport`.
 
+For unattended deployment diagnostics, append `-- --tracking=openxr` to the
+Godot command. This selects and initializes the adapter during application
+startup, so OpenXR loader failures are captured in the normal Godot log.
+
 Desktop rendering is capped at 60 fps and uses Godot's low-processor mode when
 OpenXR is not active. The Performance diagnostic reports FPS, frame and physics
 time, cumulative ONNX runs, and whether microphone processing is active. ONNX

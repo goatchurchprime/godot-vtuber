@@ -187,8 +187,20 @@ func _configure_tracking() -> void:
 	tracking_selector.add_item("Synthetic acceptance", 2)
 	tracking_selector.add_item("OpenXR direct", 3)
 	tracking_selector.item_selected.connect(_select_tracking_backend)
-	tracking_selector.select(0)
-	pose_status.text = "Webcam pose: off"
+	var initial_backend := _requested_tracking_backend()
+	tracking_selector.select(initial_backend)
+	_select_tracking_backend(initial_backend)
+
+
+func _requested_tracking_backend() -> int:
+	for argument in OS.get_cmdline_user_args():
+		if argument == "--tracking=mediapipe":
+			return 1
+		if argument == "--tracking=synthetic":
+			return 2
+		if argument == "--tracking=openxr":
+			return 3
+	return 0
 
 
 func _select_tracking_backend(index: int) -> void:
