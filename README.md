@@ -126,6 +126,11 @@ view is a presentation choice and remains separate from tracking. This
 milestone keeps the avatar/OBS camera fixed and does not enable XR rendering on
 the studio `SubViewport`.
 
+When OpenXR is active, the application creates a separate submission
+`SubViewport` with an ordinary fixed `Camera3D`. OpenXR runtimes require a
+submitting viewport to advance the session and synchronize actions, but this
+viewport does not drive the avatar and cannot alter the studio/OBS framing.
+
 For unattended deployment diagnostics, append `-- --tracking=openxr` to the
 Godot command. This selects and initializes the adapter during application
 startup, so OpenXR loader failures are captured in the normal Godot log.

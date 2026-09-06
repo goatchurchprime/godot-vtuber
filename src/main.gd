@@ -66,6 +66,7 @@ var latest_preview_timestamp_usec := 0
 var camera_feedback_texture: ImageTexture
 var analysis_resampler_needs_reset := true
 var _diagnostic_elapsed := 0.0
+var xr_submission_viewport: SubViewport
 
 
 func _ready() -> void:
@@ -206,6 +207,7 @@ func _requested_tracking_backend() -> int:
 func _select_tracking_backend(index: int) -> void:
 	camera_feedback_window.visible = index == 1
 	tracking_backend_started = false
+	_set_xr_submission_enabled(false)
 	if tracking_adapter != null:
 		tracking_adapter.stop()
 		tracking_adapter.queue_free()
@@ -225,6 +227,9 @@ func _select_tracking_backend(index: int) -> void:
 	if tracking_adapter.has_signal("preview_received"):
 		tracking_adapter.preview_received.connect(_on_preview_received)
 	tracking_backend_started = bool(tracking_adapter.start())
+	_set_xr_submission_enabled(
+		tracking_backend_started and tracking_adapter is OpenXRTrackingAdapter
+	)
 	pose_status.text = "Webcam pose: %s" % tracking_adapter.get_status()
 	_update_activity_policy()
 
@@ -305,6 +310,29 @@ func _update_activity_policy() -> void:
 		and tracking_adapter != null
 		and tracking_adapter is OpenXRTrackingAdapter
 	)
+
+
+func _set_xr_submission_enabled(enabled: bool) -> void:
+	if not enabled:
+		if xr_submission_viewport != null:
+			xr_submission_viewport.queue_free()
+			xr_submission_viewport = null
+		return
+	if xr_submission_viewport != null:
+		return
+	# OpenXR requires a submitting viewport even when tracking is consumed
+	# directly. Keep it isolated from the fixed studio/OBS SubViewport and use a
+	# plain Camera3D: no scene node reads or drives the HMD pose.
+	xr_submission_viewport = SubViewport.new()
+	xr_submission_viewport.name = "XRSubmissionViewport"
+	xr_submission_viewport.own_world_3d = true
+	xr_submission_viewport.render_target_update_mode = SubViewport.UPDATE_ALWAYS
+	xr_submission_viewport.use_xr = true
+	add_child(xr_submission_viewport)
+	var submission_camera := Camera3D.new()
+	submission_camera.name = "FixedSubmissionCamera"
+	submission_camera.current = true
+	xr_submission_viewport.add_child(submission_camera)
 
 
 func _set_monitor_enabled(enabled: bool) -> void:
