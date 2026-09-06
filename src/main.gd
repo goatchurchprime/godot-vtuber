@@ -33,9 +33,12 @@ const GATE_RELEASE_CHUNKS := 6
 @onready var output_device: OptionButton = %OutputDevice
 @onready var viseme_bars: GridContainer = %VisemeBars
 @onready var monitor_player: AudioStreamPlayer = %MonitorPlayer
-@onready var avatar: Node = $Margin/Rows/Columns/Preview/ViewportContainer/Viewport/Studio/AvatarAnchor/Avatar
+@onready var avatar_anchor: Node3D = $Margin/Rows/Columns/Preview/PreviewLayout/ViewportContainer/Viewport/Studio/AvatarAnchor
+@onready var avatar: Node = $Margin/Rows/Columns/Preview/PreviewLayout/ViewportContainer/Viewport/Studio/AvatarAnchor/Avatar
+@onready var avatar_y: VSlider = %AvatarY
 @onready var camera_feedback: TextureRect = %CameraFeedback
 @onready var camera_feedback_status: Label = %CameraFeedbackStatus
+@onready var camera_feedback_window: Window = %CameraFeedbackWindow
 
 var encoder: Object
 var viseme_stream: Variant
@@ -72,6 +75,8 @@ func _ready() -> void:
 	delay.value_changed.connect(_restart_playout.bind())
 	input_device.item_selected.connect(_select_input_device)
 	output_device.item_selected.connect(_select_output_device)
+	avatar_y.value_changed.connect(_set_avatar_height)
+	camera_feedback_window.close_requested.connect(camera_feedback_window.hide)
 	audio_status.text = _availability("Audio conditioning", "TwovoipOpusEncoder")
 	viseme_status.text = _availability("Viseme inference", "OnnxLoader")
 	pose_status.text = "Webcam pose: adapter not installed"
@@ -176,6 +181,7 @@ func _configure_tracking() -> void:
 
 
 func _select_tracking_backend(index: int) -> void:
+	camera_feedback_window.visible = index == 1
 	if tracking_adapter != null:
 		tracking_adapter.stop()
 		tracking_adapter.queue_free()
@@ -190,6 +196,10 @@ func _select_tracking_backend(index: int) -> void:
 		tracking_adapter.preview_received.connect(_on_preview_received)
 	tracking_adapter.start()
 	pose_status.text = "Webcam pose: %s" % tracking_adapter.get_status()
+
+
+func _set_avatar_height(height: float) -> void:
+	avatar_anchor.position.y = height
 
 
 func _on_pose_received(frame: Variant) -> void:

@@ -1,15 +1,14 @@
-[gd_scene load_steps=5 format=3]
+[gd_scene format=3 uid="uid://dsu6op01230f0"]
 
-[ext_resource type="Script" path="res://src/main.gd" id="1_main"]
-[ext_resource type="Script" path="res://src/avatar/avatar_driver.gd" id="2_avatar"]
-[ext_resource type="Script" path="res://src/visemes/viseme_bars.gd" id="3_bars"]
+[ext_resource type="Script" uid="uid://b5mwmgcbnekj5" path="res://src/main.gd" id="1_main"]
+[ext_resource type="Script" uid="uid://brtjv0luy811l" path="res://src/visemes/viseme_bars.gd" id="3_bars"]
 [ext_resource type="PackedScene" path="res://scenes/studio.tscn" id="4_studio"]
 
 [sub_resource type="AudioStreamGenerator" id="AudioStreamGenerator_monitor"]
 mix_rate = 48000.0
 buffer_length = 1.0
 
-[node name="Main" type="Control"]
+[node name="Main" type="Control" unique_id=1438246690]
 layout_mode = 3
 anchors_preset = 15
 anchor_right = 1.0
@@ -18,7 +17,7 @@ grow_horizontal = 2
 grow_vertical = 2
 script = ExtResource("1_main")
 
-[node name="Margin" type="MarginContainer" parent="."]
+[node name="Margin" type="MarginContainer" parent="." unique_id=1099810028]
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
@@ -30,233 +29,265 @@ offset_bottom = -24.0
 grow_horizontal = 2
 grow_vertical = 2
 
-[node name="Rows" type="VBoxContainer" parent="Margin"]
+[node name="Rows" type="VBoxContainer" parent="Margin" unique_id=522406042]
 layout_mode = 2
 theme_override_constants/separation = 16
 
-[node name="Title" type="Label" parent="Margin/Rows"]
+[node name="Title" type="Label" parent="Margin/Rows" unique_id=1646867058]
 layout_mode = 2
 theme_override_font_sizes/font_size = 28
 text = "Godot VTuber"
 
-[node name="Summary" type="Label" parent="Margin/Rows"]
+[node name="Summary" type="Label" parent="Margin/Rows" unique_id=96995102]
 layout_mode = 2
 text = "Timestamped microphone, viseme and webcam-pose integration"
 
-[node name="Columns" type="HBoxContainer" parent="Margin/Rows"]
+[node name="Columns" type="HBoxContainer" parent="Margin/Rows" unique_id=548082500]
 layout_mode = 2
 size_flags_vertical = 3
 theme_override_constants/separation = 16
 
-[node name="Preview" type="PanelContainer" parent="Margin/Rows/Columns"]
-custom_minimum_size = Vector2(500, 0)
+[node name="Preview" type="PanelContainer" parent="Margin/Rows/Columns" unique_id=1293261233]
 layout_mode = 2
 size_flags_horizontal = 3
 
-[node name="ViewportContainer" type="SubViewportContainer" parent="Margin/Rows/Columns/Preview"]
+[node name="PreviewLayout" type="HBoxContainer" parent="Margin/Rows/Columns/Preview"]
 layout_mode = 2
+
+[node name="ViewportContainer" type="SubViewportContainer" parent="Margin/Rows/Columns/Preview/PreviewLayout" unique_id=1521969208]
+layout_mode = 2
+size_flags_horizontal = 3
 stretch = true
 
-[node name="Viewport" type="SubViewport" parent="Margin/Rows/Columns/Preview/ViewportContainer"]
+[node name="Viewport" type="SubViewport" parent="Margin/Rows/Columns/Preview/PreviewLayout/ViewportContainer" unique_id=426418724]
 handle_input_locally = false
-size = Vector2i(800, 700)
+size = Vector2i(500, 748)
 render_target_update_mode = 4
 
-[node name="Studio" parent="Margin/Rows/Columns/Preview/ViewportContainer/Viewport" instance=ExtResource("4_studio")]
+[node name="Studio" parent="Margin/Rows/Columns/Preview/PreviewLayout/ViewportContainer/Viewport" unique_id=1291974210 instance=ExtResource("4_studio")]
 
-[node name="CameraPanel" type="PanelContainer" parent="Margin/Rows/Columns"]
-custom_minimum_size = Vector2(480, 0)
+[node name="Framing" type="VBoxContainer" parent="Margin/Rows/Columns/Preview/PreviewLayout"]
+custom_minimum_size = Vector2(44, 0)
 layout_mode = 2
-size_flags_horizontal = 3
+theme_override_constants/separation = 4
 
-[node name="Rows" type="VBoxContainer" parent="Margin/Rows/Columns/CameraPanel"]
+[node name="Up" type="Label" parent="Margin/Rows/Columns/Preview/PreviewLayout/Framing"]
 layout_mode = 2
-
-[node name="CameraFeedbackStatus" type="Label" parent="Margin/Rows/Columns/CameraPanel/Rows"]
-unique_name_in_owner = true
-layout_mode = 2
-text = "MediaPipe feedback · waiting for bridge"
+text = "Up"
 horizontal_alignment = 1
 
-[node name="CameraFeedback" type="TextureRect" parent="Margin/Rows/Columns/CameraPanel/Rows"]
+[node name="AvatarY" type="VSlider" parent="Margin/Rows/Columns/Preview/PreviewLayout/Framing"]
 unique_name_in_owner = true
 layout_mode = 2
 size_flags_vertical = 3
-expand_mode = 1
-stretch_mode = 5
+min_value = -1.0
+max_value = 1.0
+step = 0.01
+tooltip_text = "Move the avatar vertically in the broadcast frame"
 
-[node name="Diagnostics" type="PanelContainer" parent="Margin/Rows/Columns"]
+[node name="Down" type="Label" parent="Margin/Rows/Columns/Preview/PreviewLayout/Framing"]
+layout_mode = 2
+text = "Down"
+horizontal_alignment = 1
+
+[node name="Diagnostics" type="PanelContainer" parent="Margin/Rows/Columns" unique_id=2000276745]
 custom_minimum_size = Vector2(340, 0)
 layout_mode = 2
 
-[node name="Margin" type="MarginContainer" parent="Margin/Rows/Columns/Diagnostics"]
+[node name="Margin" type="MarginContainer" parent="Margin/Rows/Columns/Diagnostics" unique_id=1367612583]
 layout_mode = 2
 theme_override_constants/margin_left = 16
 theme_override_constants/margin_top = 16
 theme_override_constants/margin_right = 16
 theme_override_constants/margin_bottom = 16
 
-[node name="Rows" type="VBoxContainer" parent="Margin/Rows/Columns/Diagnostics/Margin"]
+[node name="Rows" type="VBoxContainer" parent="Margin/Rows/Columns/Diagnostics/Margin" unique_id=200014668]
 layout_mode = 2
 theme_override_constants/separation = 10
 
-[node name="Heading" type="Label" parent="Margin/Rows/Columns/Diagnostics/Margin/Rows"]
+[node name="Heading" type="Label" parent="Margin/Rows/Columns/Diagnostics/Margin/Rows" unique_id=981377312]
 layout_mode = 2
 theme_override_font_sizes/font_size = 20
 text = "Pipeline"
 
-[node name="InputDeviceLabel" type="Label" parent="Margin/Rows/Columns/Diagnostics/Margin/Rows"]
+[node name="InputDeviceLabel" type="Label" parent="Margin/Rows/Columns/Diagnostics/Margin/Rows" unique_id=481104753]
 layout_mode = 2
 text = "Input device"
 
-[node name="InputDevice" type="OptionButton" parent="Margin/Rows/Columns/Diagnostics/Margin/Rows"]
+[node name="InputDevice" type="OptionButton" parent="Margin/Rows/Columns/Diagnostics/Margin/Rows" unique_id=663368958]
 unique_name_in_owner = true
 layout_mode = 2
 
-[node name="OutputDeviceLabel" type="Label" parent="Margin/Rows/Columns/Diagnostics/Margin/Rows"]
+[node name="OutputDeviceLabel" type="Label" parent="Margin/Rows/Columns/Diagnostics/Margin/Rows" unique_id=1270738964]
 layout_mode = 2
 text = "Output device"
 
-[node name="OutputDevice" type="OptionButton" parent="Margin/Rows/Columns/Diagnostics/Margin/Rows"]
+[node name="OutputDevice" type="OptionButton" parent="Margin/Rows/Columns/Diagnostics/Margin/Rows" unique_id=1412547296]
 unique_name_in_owner = true
 layout_mode = 2
 
-[node name="Controls" type="HBoxContainer" parent="Margin/Rows/Columns/Diagnostics/Margin/Rows"]
+[node name="Controls" type="HBoxContainer" parent="Margin/Rows/Columns/Diagnostics/Margin/Rows" unique_id=103953256]
 layout_mode = 2
 
-[node name="Microphone" type="CheckButton" parent="Margin/Rows/Columns/Diagnostics/Margin/Rows/Controls"]
+[node name="Microphone" type="CheckButton" parent="Margin/Rows/Columns/Diagnostics/Margin/Rows/Controls" unique_id=868040920]
 unique_name_in_owner = true
 layout_mode = 2
 text = "Mic"
 
-[node name="Monitor" type="CheckButton" parent="Margin/Rows/Columns/Diagnostics/Margin/Rows/Controls"]
+[node name="Monitor" type="CheckButton" parent="Margin/Rows/Columns/Diagnostics/Margin/Rows/Controls" unique_id=601571616]
 unique_name_in_owner = true
 layout_mode = 2
 text = "Monitor"
 
-[node name="DelayRow" type="HBoxContainer" parent="Margin/Rows/Columns/Diagnostics/Margin/Rows"]
+[node name="DelayRow" type="HBoxContainer" parent="Margin/Rows/Columns/Diagnostics/Margin/Rows" unique_id=2016821337]
 layout_mode = 2
 
-[node name="Label" type="Label" parent="Margin/Rows/Columns/Diagnostics/Margin/Rows/DelayRow"]
+[node name="Label" type="Label" parent="Margin/Rows/Columns/Diagnostics/Margin/Rows/DelayRow" unique_id=639394708]
 layout_mode = 2
 text = "Playout delay"
 
-[node name="Delay" type="SpinBox" parent="Margin/Rows/Columns/Diagnostics/Margin/Rows/DelayRow"]
+[node name="Delay" type="SpinBox" parent="Margin/Rows/Columns/Diagnostics/Margin/Rows/DelayRow" unique_id=915765465]
 unique_name_in_owner = true
 layout_mode = 2
 size_flags_horizontal = 3
 min_value = 40.0
 max_value = 900.0
 step = 20.0
-value = 250.0
+value = 260.0
 suffix = " ms"
 
-[node name="GateRow" type="HBoxContainer" parent="Margin/Rows/Columns/Diagnostics/Margin/Rows"]
+[node name="GateRow" type="HBoxContainer" parent="Margin/Rows/Columns/Diagnostics/Margin/Rows" unique_id=1229727912]
 layout_mode = 2
 
-[node name="Label" type="Label" parent="Margin/Rows/Columns/Diagnostics/Margin/Rows/GateRow"]
+[node name="Label" type="Label" parent="Margin/Rows/Columns/Diagnostics/Margin/Rows/GateRow" unique_id=1942449564]
 layout_mode = 2
 text = "Silence gate"
 
-[node name="GateDb" type="SpinBox" parent="Margin/Rows/Columns/Diagnostics/Margin/Rows/GateRow"]
+[node name="GateDb" type="SpinBox" parent="Margin/Rows/Columns/Diagnostics/Margin/Rows/GateRow" unique_id=106889454]
 unique_name_in_owner = true
 layout_mode = 2
 size_flags_horizontal = 3
 min_value = -70.0
 max_value = -15.0
-step = 1.0
 value = -42.0
 suffix = " dBFS"
 
-[node name="BackendRow" type="HBoxContainer" parent="Margin/Rows/Columns/Diagnostics/Margin/Rows"]
+[node name="BackendRow" type="HBoxContainer" parent="Margin/Rows/Columns/Diagnostics/Margin/Rows" unique_id=1874100732]
 layout_mode = 2
 
-[node name="Label" type="Label" parent="Margin/Rows/Columns/Diagnostics/Margin/Rows/BackendRow"]
+[node name="Label" type="Label" parent="Margin/Rows/Columns/Diagnostics/Margin/Rows/BackendRow" unique_id=1499522919]
 layout_mode = 2
 text = "Viseme backend"
 
-[node name="Backend" type="OptionButton" parent="Margin/Rows/Columns/Diagnostics/Margin/Rows/BackendRow"]
+[node name="Backend" type="OptionButton" parent="Margin/Rows/Columns/Diagnostics/Margin/Rows/BackendRow" unique_id=1809558183]
 unique_name_in_owner = true
 layout_mode = 2
 size_flags_horizontal = 3
 
-[node name="TrackingRow" type="HBoxContainer" parent="Margin/Rows/Columns/Diagnostics/Margin/Rows"]
+[node name="TrackingRow" type="HBoxContainer" parent="Margin/Rows/Columns/Diagnostics/Margin/Rows" unique_id=1631453449]
 layout_mode = 2
 
-[node name="Label" type="Label" parent="Margin/Rows/Columns/Diagnostics/Margin/Rows/TrackingRow"]
+[node name="Label" type="Label" parent="Margin/Rows/Columns/Diagnostics/Margin/Rows/TrackingRow" unique_id=933144124]
 layout_mode = 2
 text = "Tracking backend"
 
-[node name="TrackingBackend" type="OptionButton" parent="Margin/Rows/Columns/Diagnostics/Margin/Rows/TrackingRow"]
+[node name="TrackingBackend" type="OptionButton" parent="Margin/Rows/Columns/Diagnostics/Margin/Rows/TrackingRow" unique_id=1003565987]
 unique_name_in_owner = true
 layout_mode = 2
 size_flags_horizontal = 3
 
-[node name="RawWeights" type="Label" parent="Margin/Rows/Columns/Diagnostics/Margin/Rows"]
+[node name="RawWeights" type="Label" parent="Margin/Rows/Columns/Diagnostics/Margin/Rows" unique_id=48906106]
 layout_mode = 2
 text = "Raw recognizer weights"
 
-[node name="VisemeBars" type="GridContainer" parent="Margin/Rows/Columns/Diagnostics/Margin/Rows"]
+[node name="VisemeBars" type="GridContainer" parent="Margin/Rows/Columns/Diagnostics/Margin/Rows" unique_id=408617575]
 unique_name_in_owner = true
 layout_mode = 2
 theme_override_constants/h_separation = 5
 theme_override_constants/v_separation = 0
 script = ExtResource("3_bars")
 
-[node name="Audio" type="Label" parent="Margin/Rows/Columns/Diagnostics/Margin/Rows"]
+[node name="Audio" type="Label" parent="Margin/Rows/Columns/Diagnostics/Margin/Rows" unique_id=1630078842]
 unique_name_in_owner = true
 layout_mode = 2
 text = "Audio conditioning: unavailable"
 
-[node name="Visemes" type="Label" parent="Margin/Rows/Columns/Diagnostics/Margin/Rows"]
+[node name="Visemes" type="Label" parent="Margin/Rows/Columns/Diagnostics/Margin/Rows" unique_id=1127928670]
 unique_name_in_owner = true
 layout_mode = 2
 text = "Viseme inference: unavailable"
 
-[node name="AvatarStatus" type="Label" parent="Margin/Rows/Columns/Diagnostics/Margin/Rows"]
+[node name="AvatarStatus" type="Label" parent="Margin/Rows/Columns/Diagnostics/Margin/Rows" unique_id=1508757058]
 unique_name_in_owner = true
 layout_mode = 2
 text = "Avatar: unavailable"
 
-[node name="Pose" type="Label" parent="Margin/Rows/Columns/Diagnostics/Margin/Rows"]
+[node name="Pose" type="Label" parent="Margin/Rows/Columns/Diagnostics/Margin/Rows" unique_id=1005780654]
 unique_name_in_owner = true
 layout_mode = 2
 text = "Webcam pose: unavailable"
 
-[node name="Clock" type="Label" parent="Margin/Rows/Columns/Diagnostics/Margin/Rows"]
+[node name="Clock" type="Label" parent="Margin/Rows/Columns/Diagnostics/Margin/Rows" unique_id=510732433]
 unique_name_in_owner = true
 layout_mode = 2
 text = "Playout sample: 0"
 
-[node name="Buffer" type="Label" parent="Margin/Rows/Columns/Diagnostics/Margin/Rows"]
+[node name="Buffer" type="Label" parent="Margin/Rows/Columns/Diagnostics/Margin/Rows" unique_id=906151904]
 unique_name_in_owner = true
 layout_mode = 2
 text = "Buffered: 0 ms"
 
-[node name="Level" type="ProgressBar" parent="Margin/Rows/Columns/Diagnostics/Margin/Rows"]
+[node name="Level" type="ProgressBar" parent="Margin/Rows/Columns/Diagnostics/Margin/Rows" unique_id=530185489]
 unique_name_in_owner = true
 layout_mode = 2
 max_value = 1.0
 show_percentage = false
 
-[node name="LevelText" type="Label" parent="Margin/Rows/Columns/Diagnostics/Margin/Rows"]
+[node name="LevelText" type="Label" parent="Margin/Rows/Columns/Diagnostics/Margin/Rows" unique_id=1641431735]
 unique_name_in_owner = true
 layout_mode = 2
 text = "RMS: silence"
 
-[node name="Note" type="Label" parent="Margin/Rows/Columns/Diagnostics/Margin/Rows"]
+[node name="Note" type="Label" parent="Margin/Rows/Columns/Diagnostics/Margin/Rows" unique_id=1926118065]
 layout_mode = 2
 size_flags_vertical = 3
 text = "The application runs without optional native dependencies. Adapters will activate as they are installed."
-autowrap_mode = 2
 vertical_alignment = 2
+autowrap_mode = 2
 
-[node name="Footer" type="Label" parent="Margin/Rows"]
+[node name="Footer" type="Label" parent="Margin/Rows" unique_id=169219621]
 unique_name_in_owner = true
 layout_mode = 2
 text = "Milestone 5 · source/filter lipsync + replaceable head/body tracking"
 
-[node name="MonitorPlayer" type="AudioStreamPlayer" parent="."]
+[node name="MonitorPlayer" type="AudioStreamPlayer" parent="." unique_id=945566179]
 unique_name_in_owner = true
 stream = SubResource("AudioStreamGenerator_monitor")
 bus = &"VTuberMonitor"
+
+[node name="CameraFeedbackWindow" type="Window" parent="."]
+unique_name_in_owner = true
+title = "MediaPipe tracking feedback"
+initial_position = 1
+size = Vector2i(640, 480)
+visible = false
+
+[node name="Rows" type="VBoxContainer" parent="CameraFeedbackWindow"]
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="CameraFeedbackStatus" type="Label" parent="CameraFeedbackWindow/Rows" unique_id=1322442801]
+unique_name_in_owner = true
+layout_mode = 2
+text = "MediaPipe feedback · waiting for bridge"
+horizontal_alignment = 1
+
+[node name="CameraFeedback" type="TextureRect" parent="CameraFeedbackWindow/Rows" unique_id=474034490]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_vertical = 3
+expand_mode = 1
+stretch_mode = 5
