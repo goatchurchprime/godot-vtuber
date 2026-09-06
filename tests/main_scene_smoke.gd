@@ -18,6 +18,9 @@ func _run() -> void:
 	var avatar: Node = main.avatar
 	assert(avatar.status.begins_with("avatar ready"), avatar.status)
 	assert(main.avatar_y != null)
+	assert(Engine.max_fps == 60)
+	assert(main.performance_status != null)
+	assert(main.tracking_selector.item_count == 4)
 	main.avatar_y.value = 0.25
 	assert(is_equal_approx(main.avatar_anchor.position.y, 0.25))
 	var camera: Camera3D = main.get_node("Margin/Rows/Columns/Preview/PreviewLayout/ViewportContainer/Viewport/Studio/BroadcastCamera")

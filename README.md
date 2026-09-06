@@ -109,6 +109,28 @@ collider settings after import. Both files remain ignored by Git and must be
 copied privately to another development machine. The VRM importer and MToon
 shader addons are public MIT-licensed project dependencies and are committed.
 
+## OpenXR tracking and broadcast policy
+
+Selecting the `OpenXR direct` backend initializes Godot's OpenXR interface and
+reads the HMD plus left/right hand trackers through `XRServer`. It deliberately
+does not create `XRCamera3D` or `XRController3D` nodes: those nodes are useful scene
+projections of tracker state, but are not required to acquire poses. The
+adapter emits the same timestamped `PoseFrame` boundary as MediaPipe, leaving
+retargeting, filtering, networking and the fixed `BroadcastCamera` under this
+application's policy.
+
+An active OpenXR runtime is still required. On Windows, start SteamVR and make
+it the current OpenXR runtime before selecting `OpenXR direct`. Whether the
+headset shows runtime passthrough, the SteamVR desktop overlay, or a Godot XR
+view is a presentation choice and remains separate from tracking. This
+milestone keeps the avatar/OBS camera fixed and does not enable XR rendering on
+the studio `SubViewport`.
+
+Desktop rendering is capped at 60 fps and uses Godot's low-processor mode when
+OpenXR is not active. The Performance diagnostic reports FPS, frame and physics
+time, cumulative ONNX runs, and whether microphone processing is active. ONNX
+runs must remain unchanged while the microphone is off.
+
 The current acceptance model is the `lpc-source-filter` pilot from
 `vizemes-source-filter/export/source-filter-pilot/lpc-source-filter/`. Its
 metadata selects 24 features, a 25 ms window, 10 ms hop and 19-hop TCN history.

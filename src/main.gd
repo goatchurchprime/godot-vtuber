@@ -12,8 +12,10 @@ const OvrLipSyncStreamScript := preload("res://src/visemes/ovr_lipsync_stream.gd
 const VisemeFrameScript := preload("res://src/visemes/viseme_frame.gd")
 const MediaPipeUdpAdapterScript := preload("res://src/tracking/mediapipe_udp_adapter.gd")
 const SyntheticTrackingAdapterScript := preload("res://src/tracking/synthetic_tracking_adapter.gd")
+const OpenXRTrackingAdapterScript := preload("res://src/tracking/openxr_tracking_adapter.gd")
 const GATE_HYSTERESIS_DB := 6.0
 const GATE_RELEASE_CHUNKS := 6
+const DIAGNOSTIC_INTERVAL_SEC := 0.25
 
 @onready var audio_status: Label = %Audio
 @onready var viseme_status: Label = %Visemes
@@ -21,6 +23,7 @@ const GATE_RELEASE_CHUNKS := 6
 @onready var avatar_status: Label = %AvatarStatus
 @onready var clock_status: Label = %Clock
 @onready var buffer_status: Label = %Buffer
+@onready var performance_status: Label = %PerformanceStatus
 @onready var level: ProgressBar = %Level
 @onready var level_text: Label = %LevelText
 @onready var microphone: CheckButton = %Microphone
@@ -57,13 +60,17 @@ var viseme_queue: Array = []
 var speech_active := false
 var quiet_chunks := 0
 var tracking_adapter: Variant
+var tracking_backend_started := false
 var latest_pose_timestamp_usec := 0
 var latest_preview_timestamp_usec := 0
 var camera_feedback_texture: ImageTexture
 var analysis_resampler_needs_reset := true
+var _diagnostic_elapsed := 0.0
 
 
 func _ready() -> void:
+	Engine.max_fps = 60
+	OS.low_processor_usage_mode_sleep_usec = 6900
 	_load_optional_extension(TWOVOIP_EXTENSION, "TwovoipOpusEncoder")
 	_load_optional_extension(MEL_EXTENSION, "MelFrontend")
 	_load_optional_extension(ONNX_EXTENSION, "OnnxLoader")
@@ -89,16 +96,19 @@ func _ready() -> void:
 		input_device.disabled = true
 	_configure_visemes()
 	_configure_tracking()
+	_update_activity_policy()
 
 
-func _process(_delta: float) -> void:
-	if not processing_enabled:
-		return
-	_capture_conditioned_chunks()
-	_start_playout_when_ready()
-	_drain_playout_queue()
-	_apply_synchronized_visemes()
-	_update_diagnostics()
+func _process(delta: float) -> void:
+	if processing_enabled:
+		_capture_conditioned_chunks()
+		_start_playout_when_ready()
+		_drain_playout_queue()
+		_apply_synchronized_visemes()
+	_diagnostic_elapsed += delta
+	if _diagnostic_elapsed >= DIAGNOSTIC_INTERVAL_SEC:
+		_diagnostic_elapsed = 0.0
+		_update_diagnostics()
 
 
 func _load_optional_extension(path: String, provided_class: StringName) -> void:
@@ -175,6 +185,7 @@ func _configure_tracking() -> void:
 	tracking_selector.add_item("Off", 0)
 	tracking_selector.add_item("MediaPipe UDP", 1)
 	tracking_selector.add_item("Synthetic acceptance", 2)
+	tracking_selector.add_item("OpenXR direct", 3)
 	tracking_selector.item_selected.connect(_select_tracking_backend)
 	tracking_selector.select(0)
 	pose_status.text = "Webcam pose: off"
@@ -182,20 +193,28 @@ func _configure_tracking() -> void:
 
 func _select_tracking_backend(index: int) -> void:
 	camera_feedback_window.visible = index == 1
+	tracking_backend_started = false
 	if tracking_adapter != null:
 		tracking_adapter.stop()
 		tracking_adapter.queue_free()
 		tracking_adapter = null
 	if index == 0:
 		pose_status.text = "Webcam pose: off"
+		_update_activity_policy()
 		return
-	tracking_adapter = MediaPipeUdpAdapterScript.new() if index == 1 else SyntheticTrackingAdapterScript.new()
+	if index == 1:
+		tracking_adapter = MediaPipeUdpAdapterScript.new()
+	elif index == 2:
+		tracking_adapter = SyntheticTrackingAdapterScript.new()
+	else:
+		tracking_adapter = OpenXRTrackingAdapterScript.new()
 	add_child(tracking_adapter)
 	tracking_adapter.pose_received.connect(_on_pose_received)
 	if tracking_adapter.has_signal("preview_received"):
 		tracking_adapter.preview_received.connect(_on_preview_received)
-	tracking_adapter.start()
+	tracking_backend_started = bool(tracking_adapter.start())
 	pose_status.text = "Webcam pose: %s" % tracking_adapter.get_status()
+	_update_activity_policy()
 
 
 func _set_avatar_height(height: float) -> void:
@@ -263,6 +282,17 @@ func _set_microphone_enabled(enabled: bool) -> void:
 		speech_active = false
 		quiet_chunks = 0
 		_restart_playout()
+	_update_activity_policy()
+
+
+func _update_activity_policy() -> void:
+	# The fixed desktop/OBS camera does not need an unbounded render loop. An XR
+	# runtime supplies its own pacing, so low-processor sleeping is disabled then.
+	OS.low_processor_usage_mode = not (
+		tracking_backend_started
+		and tracking_adapter != null
+		and tracking_adapter is OpenXRTrackingAdapter
+	)
 
 
 func _set_monitor_enabled(enabled: bool) -> void:
@@ -422,6 +452,16 @@ func _update_diagnostics() -> void:
 		var age_ms := maxf(0.0, (Time.get_ticks_usec() - latest_pose_timestamp_usec) / 1000.0)
 		pose_status.text = "Webcam pose: %s | age %.1f ms" % [tracking_adapter.get_status(), age_ms]
 	avatar_status.text = "Avatar: %s" % avatar.status
+	var onnx_runs := 0
+	if onnx_viseme_stream != null:
+		onnx_runs = int(onnx_viseme_stream.onnx_runs)
+	performance_status.text = "Performance: %.0f fps · frame %.2f ms · physics %.2f ms · ONNX runs %d · %s" % [
+		Performance.get_monitor(Performance.TIME_FPS),
+		Performance.get_monitor(Performance.TIME_PROCESS) * 1000.0,
+		Performance.get_monitor(Performance.TIME_PHYSICS_PROCESS) * 1000.0,
+		onnx_runs,
+		"mic on" if processing_enabled else "idle",
+	]
 
 
 func _availability(label: String, native_class: StringName) -> String:
