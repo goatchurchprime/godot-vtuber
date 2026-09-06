@@ -1,19 +1,13 @@
-[gd_scene load_steps=6 format=3]
+[gd_scene load_steps=5 format=3]
 
 [ext_resource type="Script" path="res://src/main.gd" id="1_main"]
 [ext_resource type="Script" path="res://src/avatar/avatar_driver.gd" id="2_avatar"]
 [ext_resource type="Script" path="res://src/visemes/viseme_bars.gd" id="3_bars"]
+[ext_resource type="PackedScene" path="res://scenes/studio.tscn" id="4_studio"]
 
 [sub_resource type="AudioStreamGenerator" id="AudioStreamGenerator_monitor"]
 mix_rate = 48000.0
 buffer_length = 1.0
-
-[sub_resource type="Environment" id="Environment_preview"]
-background_mode = 1
-background_color = Color(0.08, 0.09, 0.12, 1)
-ambient_light_source = 3
-ambient_light_color = Color(0.65, 0.68, 0.75, 1)
-ambient_light_energy = 0.65
 
 [node name="Main" type="Control"]
 layout_mode = 3
@@ -68,23 +62,28 @@ handle_input_locally = false
 size = Vector2i(800, 700)
 render_target_update_mode = 4
 
-[node name="World" type="Node3D" parent="Margin/Rows/Columns/Preview/ViewportContainer/Viewport"]
+[node name="Studio" parent="Margin/Rows/Columns/Preview/ViewportContainer/Viewport" instance=ExtResource("4_studio")]
 
-[node name="Environment" type="WorldEnvironment" parent="Margin/Rows/Columns/Preview/ViewportContainer/Viewport/World"]
-environment = SubResource("Environment_preview")
+[node name="CameraPanel" type="PanelContainer" parent="Margin/Rows/Columns"]
+custom_minimum_size = Vector2(480, 0)
+layout_mode = 2
+size_flags_horizontal = 3
 
-[node name="KeyLight" type="DirectionalLight3D" parent="Margin/Rows/Columns/Preview/ViewportContainer/Viewport/World"]
-rotation_degrees = Vector3(-35, -25, 0)
-light_energy = 1.2
+[node name="Rows" type="VBoxContainer" parent="Margin/Rows/Columns/CameraPanel"]
+layout_mode = 2
 
-[node name="Camera" type="Camera3D" parent="Margin/Rows/Columns/Preview/ViewportContainer/Viewport/World"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.7, 0.5)
-current = true
-fov = 30.0
-
-[node name="Avatar" type="Node3D" parent="Margin/Rows/Columns/Preview/ViewportContainer/Viewport/World"]
+[node name="CameraFeedbackStatus" type="Label" parent="Margin/Rows/Columns/CameraPanel/Rows"]
 unique_name_in_owner = true
-script = ExtResource("2_avatar")
+layout_mode = 2
+text = "MediaPipe feedback · waiting for bridge"
+horizontal_alignment = 1
+
+[node name="CameraFeedback" type="TextureRect" parent="Margin/Rows/Columns/CameraPanel/Rows"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_vertical = 3
+expand_mode = 1
+stretch_mode = 5
 
 [node name="Diagnostics" type="PanelContainer" parent="Margin/Rows/Columns"]
 custom_minimum_size = Vector2(340, 0)
@@ -181,6 +180,18 @@ unique_name_in_owner = true
 layout_mode = 2
 size_flags_horizontal = 3
 
+[node name="TrackingRow" type="HBoxContainer" parent="Margin/Rows/Columns/Diagnostics/Margin/Rows"]
+layout_mode = 2
+
+[node name="Label" type="Label" parent="Margin/Rows/Columns/Diagnostics/Margin/Rows/TrackingRow"]
+layout_mode = 2
+text = "Tracking backend"
+
+[node name="TrackingBackend" type="OptionButton" parent="Margin/Rows/Columns/Diagnostics/Margin/Rows/TrackingRow"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+
 [node name="RawWeights" type="Label" parent="Margin/Rows/Columns/Diagnostics/Margin/Rows"]
 layout_mode = 2
 text = "Raw recognizer weights"
@@ -243,7 +254,7 @@ vertical_alignment = 2
 [node name="Footer" type="Label" parent="Margin/Rows"]
 unique_name_in_owner = true
 layout_mode = 2
-text = "Milestone 1 · timestamped microphone loopback"
+text = "Milestone 5 · source/filter lipsync + replaceable head/body tracking"
 
 [node name="MonitorPlayer" type="AudioStreamPlayer" parent="."]
 unique_name_in_owner = true

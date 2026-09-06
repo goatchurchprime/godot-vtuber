@@ -1,0 +1,46 @@
+[gd_scene load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://src/avatar/avatar_driver.gd" id="1_avatar"]
+
+[sub_resource type="Environment" id="Environment_studio"]
+background_mode = 1
+background_color = Color(0.055, 0.065, 0.09, 1)
+ambient_light_source = 3
+ambient_light_color = Color(0.62, 0.68, 0.82, 1)
+ambient_light_energy = 0.55
+tonemap_mode = 2
+
+[node name="Studio" type="Node3D"]
+
+[node name="Environment" type="WorldEnvironment" parent="."]
+environment = SubResource("Environment_studio")
+
+[node name="KeyLight" type="DirectionalLight3D" parent="."]
+rotation_degrees = Vector3(-35, -25, 0)
+light_color = Color(1, 0.88, 0.78, 1)
+light_energy = 1.15
+shadow_enabled = true
+
+[node name="FillLight" type="OmniLight3D" parent="."]
+position = Vector3(-1.3, 1.75, 1.2)
+light_color = Color(0.55, 0.7, 1, 1)
+light_energy = 2.2
+omni_range = 4.0
+
+[node name="RimLight" type="SpotLight3D" parent="."]
+position = Vector3(1.2, 2.1, -0.6)
+rotation_degrees = Vector3(-155, 25, 180)
+light_color = Color(0.7, 0.8, 1, 1)
+light_energy = 3.0
+spot_range = 5.0
+
+[node name="BroadcastCamera" type="Camera3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.7, 0.5)
+current = true
+fov = 30.0
+
+[node name="AvatarAnchor" type="Node3D" parent="."]
+
+[node name="Avatar" type="Node3D" parent="AvatarAnchor"]
+unique_name_in_owner = true
+script = ExtResource("1_avatar")

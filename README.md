@@ -43,12 +43,12 @@ the Mel frontend, model files, camera tracking and avatar files are absent.
 
 ### Current TwoVoIP development checkout
 
-The microphone-loopback milestone uses the experimental
-`get_current_chunk()` hook proposed in TwoVoIP PR
-[#101](https://github.com/goatchurchprime/two-voip-godot-4/pull/101), on branch
-`codex/conditioned-pcm-loopback`.
-It returns the conditioned output-rate PCM that would otherwise be passed to
-Opus. From this repository, link a matching checkout with:
+The microphone-loopback milestone uses the current one-shot
+`TwovoipOpusEncoder.initialize()` contract. `get_current_chunk()` returns the
+conditioned output-rate PCM that would otherwise be passed to Opus. The lazy
+`get_current_chunk_16khz(reset_sampler)` branch is consumed exactly once per
+processed chunk and reset after a gap. From this repository, link a matching
+checkout with:
 
 ```sh
 mkdir -p addons
@@ -81,13 +81,36 @@ and playout positions are 48 kHz sample-clock values. Viseme results are queued
 against that same clock and applied when their audio reaches playout.
 
 For live lip animation, also link compatible `onnx_loader` and `vizemes_mel`
-addons, an ONNX model to `models/viseme.onnx`, and an avatar to
-`avatars/readyplayerme_avatar.glb`. For assets with external textures, link or
-copy the complete ignored `avatars/` directory rather than one GLB symlink. The
+addons, an ONNX model to `models/viseme.onnx`, and an avatar scene to
+`avatars/freakhound_avatar.tscn`. For assets with external textures, link or
+copy the complete ignored `avatars/` directory rather than one model symlink. The
 ONNX model must carry `vizemes_meta_json`; its embedded
 audio and tensor values are the runtime contract. Avatar meshes may supply the
-OVR-compatible `viseme_sil` through `viseme_U` blend shapes. These paths are
-ignored so neither model nor avatar enters this repository.
+OVR-compatible `viseme_sil` through `viseme_U` or VRChat-compatible `vrc.v_sil`
+through `vrc.v_ou` blend shapes. Model and private-avatar paths are ignored so
+neither enters this repository.
+
+## Editing the studio and private avatar
+
+Open `scenes/studio.tscn` in the Godot editor to author the broadcast set. Its
+`Environment`, `KeyLight`, `FillLight`, `RimLight`, `BroadcastCamera` and
+`AvatarAnchor` are ordinary scene nodes and remain separate from microphone
+and synchronization controls.
+
+The private `avatars/freakhound_avatar.tscn` is an inherited wrapper around
+`avatars/freakhound.vrm`. Open that scene to add or override spring-bone and
+collider settings after import. Both files remain ignored by Git and must be
+copied privately to another development machine. The VRM importer and MToon
+shader addons are public MIT-licensed project dependencies and are committed.
+
+The current acceptance model is the `lpc-source-filter` pilot from
+`vizemes-source-filter/export/source-filter-pilot/lpc-source-filter/`. Its
+metadata selects 24 features, a 25 ms window, 10 ms hop and 19-hop TCN history.
+`VisemeStream` selects Mel or source/filter from that metadata; filenames do
+not select signal processing. For the training-time per-utterance
+normalization, this application explicitly uses a bounded two-second causal
+window. This is a live policy approximation, not batch/live equivalence, and
+is intentionally kept in this repository.
 
 On NixOS, launch the complete development stack with:
 
@@ -127,9 +150,67 @@ post-conditioning 48 kHz stereo frame that is sent to playout; the project
 backend receives the corresponding post-conditioning 16 kHz analysis frame.
 This keeps the subjective comparison focused on the recognizers rather than
 different animation or audio paths.
-- A separately packaged MediaPipe-compatible tracking process or extension.
-- Avatar profiles mapping canonical pose and expression names to a particular
-  GLB/VRM skeleton and its blend shapes.
+
+## Laptop webcam and OBS milestone
+
+The tracking selector has three replaceable adapters: **Off**, **MediaPipe
+UDP**, and **Synthetic acceptance**. Synthetic mode exercises the complete
+Godot pose/avatar boundary without a camera. MediaPipe mode listens only on
+`127.0.0.1:7007`; start the bridge in another terminal:
+
+```sh
+python3 tools/mediapipe_tracking_bridge.py --camera 0
+```
+
+The bridge needs Python packages `mediapipe` and `opencv-python`. Run it with
+`--synthetic` to test process deployment and UDP without those packages. It
+reports missing packages, camera-open failure and frame-read failure on stderr;
+Godot reports bind/protocol failures, received/rejected counts and observation
+age in the UI. The schema is versioned JSON so a native extension or different
+tracker can replace the bridge without changing avatar code.
+
+The normal camera bridge also sends a 10 fps, 480×360 annotated feedback view
+to the application. It uses MediaPipe's face contours and pose skeleton and
+labels the exact canonical values being sent to the avatar. Preview frames are
+independent lossy UDP datagrams: congestion or a decode failure cannot stall
+pose observations or audio. Use `--godot-preview-fps 0` to disable this stream,
+or another positive rate to tune its CPU/network cost.
+
+On NixOS, enter the pinned shell before creating or running the isolated
+environment. Besides Python 3.12, the shell exposes only the native libraries
+required by the binary wheels:
+
+```sh
+nix develop
+python3 -m venv .venv-mediapipe
+.venv-mediapipe/bin/pip install -r requirements-mediapipe.txt
+.venv-mediapipe/bin/python tools/mediapipe_tracking_bridge.py --camera 0 --preview
+```
+
+Use `--max-frames 30` for a bounded camera/dependency acceptance run. The
+bridge prints its selected camera/destination immediately and periodic
+throughput while running. `--preview` opens MediaPipe's standard face-contour
+and pose-skeleton overlay and prints the exact canonical values sent to Godot;
+press **Q** or **Esc** in that window to stop the bridge.
+
+In Godot select **MediaPipe UDP**, enable **Mic** and **Monitor**, and use
+headphones. In OBS add a Window Capture or Game Capture for Godot and an Audio
+Output Capture for the selected Godot output device. The application owns the
+configured audio delay and applies visemes on the corresponding sample clock;
+webcam capture timestamps remain independent. For this first milestone,
+canonical head rotation and shoulder-centre motion drive the avatar root;
+skeleton-specific neck/spine retargeting belongs in a future avatar profile.
+
+For the speaking-only studio milestone, leave tracking set to **Off**. The
+temporary root-pose experiment will be removed when skeleton retargeting begins.
+
+Headless acceptance gates:
+
+```sh
+godot4 --headless --path "$PWD" --script res://tests/tracking_adapter_smoke.gd
+godot4 --headless --path "$PWD" --script res://tests/viseme_avatar_smoke.gd
+godot4 --headless --path "$PWD" --script res://tests/main_scene_smoke.gd
+```
 
 ## Timing rule
 

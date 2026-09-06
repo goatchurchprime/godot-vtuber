@@ -26,8 +26,27 @@ frames. Retargeting and smoothing operate on those observations; rendering
 interpolates the most recent valid pose. Pose delay and audio delay are
 separate settings.
 
+The current MediaPipe process sends versioned JSON datagrams over localhost.
+Its adapter converts them to `PoseFrame`; only canonical dictionaries cross
+that boundary. UDP is intentionally latest-state transport: a dropped pose
+does not block audio or accumulate stale camera latency. The UI exposes packet
+rejection and observation age. A dependency-free synthetic adapter implements
+the same boundary for acceptance testing.
+
+Annotated player feedback uses a separate `VTPJ` JPEG datagram at a bounded
+rate. The bridge draws the authoritative MediaPipe topology before encoding;
+Godot shows the newest complete image beside the avatar. This deliberately
+avoids a second webcam consumer and keeps preview loss from back-pressuring the
+latest-state pose channel.
+
 ## Dependency direction
 
 The application depends on interfaces implemented by adapters. TwoVoIP,
 VizemeStream and a tracking backend must not depend on the application or on an
 avatar format.
+
+Source/filter normalization is application policy because causal live behavior
+cannot reproduce a full utterance's statistics. The current two-second rolling
+window is observable and replaceable without changing the feature extractor or
+model loader. The reusable native `SourceFilterFrontend.analyze_frame()` API
+was sufficient, so this milestone requires no upstream library API change.

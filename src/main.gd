@@ -10,6 +10,8 @@ const VISEME_MODEL := "res://models/viseme.onnx"
 const VisemeStreamScript := preload("res://src/visemes/viseme_stream.gd")
 const OvrLipSyncStreamScript := preload("res://src/visemes/ovr_lipsync_stream.gd")
 const VisemeFrameScript := preload("res://src/visemes/viseme_frame.gd")
+const MediaPipeUdpAdapterScript := preload("res://src/tracking/mediapipe_udp_adapter.gd")
+const SyntheticTrackingAdapterScript := preload("res://src/tracking/synthetic_tracking_adapter.gd")
 const GATE_HYSTERESIS_DB := 6.0
 const GATE_RELEASE_CHUNKS := 6
 
@@ -26,11 +28,14 @@ const GATE_RELEASE_CHUNKS := 6
 @onready var delay: SpinBox = %Delay
 @onready var gate_db: SpinBox = %GateDb
 @onready var backend_selector: OptionButton = %Backend
+@onready var tracking_selector: OptionButton = %TrackingBackend
 @onready var input_device: OptionButton = %InputDevice
 @onready var output_device: OptionButton = %OutputDevice
 @onready var viseme_bars: GridContainer = %VisemeBars
 @onready var monitor_player: AudioStreamPlayer = %MonitorPlayer
-@onready var avatar: Node = %Avatar
+@onready var avatar: Node = $Margin/Rows/Columns/Preview/ViewportContainer/Viewport/Studio/AvatarAnchor/Avatar
+@onready var camera_feedback: TextureRect = %CameraFeedback
+@onready var camera_feedback_status: Label = %CameraFeedbackStatus
 
 var encoder: Object
 var viseme_stream: Variant
@@ -48,6 +53,11 @@ var processing_enabled := false
 var viseme_queue: Array = []
 var speech_active := false
 var quiet_chunks := 0
+var tracking_adapter: Variant
+var latest_pose_timestamp_usec := 0
+var latest_preview_timestamp_usec := 0
+var camera_feedback_texture: ImageTexture
+var analysis_resampler_needs_reset := true
 
 
 func _ready() -> void:
@@ -73,6 +83,7 @@ func _ready() -> void:
 		monitor.disabled = true
 		input_device.disabled = true
 	_configure_visemes()
+	_configure_tracking()
 
 
 func _process(_delta: float) -> void:
@@ -103,7 +114,7 @@ func _configure_encoder() -> void:
 		monitor.disabled = true
 		return
 	var error: int = encoder.call(
-		"create_sampler",
+		"initialize",
 		AudioServer.get_input_mix_rate(),
 		OUTPUT_RATE,
 		1,
@@ -154,6 +165,49 @@ func _select_viseme_backend(index: int) -> void:
 	viseme_status.text = "Viseme inference: %s" % viseme_stream.get_status()
 
 
+func _configure_tracking() -> void:
+	tracking_selector.clear()
+	tracking_selector.add_item("Off", 0)
+	tracking_selector.add_item("MediaPipe UDP", 1)
+	tracking_selector.add_item("Synthetic acceptance", 2)
+	tracking_selector.item_selected.connect(_select_tracking_backend)
+	tracking_selector.select(0)
+	pose_status.text = "Webcam pose: off"
+
+
+func _select_tracking_backend(index: int) -> void:
+	if tracking_adapter != null:
+		tracking_adapter.stop()
+		tracking_adapter.queue_free()
+		tracking_adapter = null
+	if index == 0:
+		pose_status.text = "Webcam pose: off"
+		return
+	tracking_adapter = MediaPipeUdpAdapterScript.new() if index == 1 else SyntheticTrackingAdapterScript.new()
+	add_child(tracking_adapter)
+	tracking_adapter.pose_received.connect(_on_pose_received)
+	if tracking_adapter.has_signal("preview_received"):
+		tracking_adapter.preview_received.connect(_on_preview_received)
+	tracking_adapter.start()
+	pose_status.text = "Webcam pose: %s" % tracking_adapter.get_status()
+
+
+func _on_pose_received(frame: Variant) -> void:
+	latest_pose_timestamp_usec = frame.timestamp_usec
+	avatar.set_pose(frame)
+
+
+func _on_preview_received(image: Image, timestamp_usec: int) -> void:
+	latest_preview_timestamp_usec = timestamp_usec
+	if camera_feedback_texture == null:
+		camera_feedback_texture = ImageTexture.create_from_image(image)
+		camera_feedback.texture = camera_feedback_texture
+	else:
+		camera_feedback_texture.update(image)
+	var age_ms := maxf(0.0, (Time.get_ticks_usec() - timestamp_usec) / 1000.0)
+	camera_feedback_status.text = "MediaPipe feedback · %.1f ms old" % age_ms
+
+
 func _configure_audio_bus() -> void:
 	if AudioServer.get_bus_index("VTuberMonitor") >= 0:
 		return
@@ -195,6 +249,7 @@ func _set_microphone_enabled(enabled: bool) -> void:
 	processing_enabled = enabled
 	if not enabled:
 		pending_input.clear()
+		analysis_resampler_needs_reset = true
 		speech_active = false
 		quiet_chunks = 0
 		_restart_playout()
@@ -236,7 +291,12 @@ func _capture_conditioned_chunks() -> void:
 			break
 		var chunk_end := processed_sample_position + conditioned.size()
 		if viseme_stream != null:
-			var analysis: PackedFloat32Array = encoder.call("get_current_chunk_16khz")
+			# This stateful adapter must be consumed exactly once per processed chunk.
+			# Reset after any gap so the next inference cannot inherit stale history.
+			var analysis: PackedFloat32Array = encoder.call(
+				"get_current_chunk_16khz", analysis_resampler_needs_reset
+			)
+			analysis_resampler_needs_reset = false
 			if viseme_stream.push_audio(conditioned, analysis):
 				var gated_levels := _gate_visemes(
 					viseme_stream.levels,
@@ -251,6 +311,8 @@ func _capture_conditioned_chunks() -> void:
 				else:
 					avatar.set_visemes(frame.weights)
 		processed_sample_position = chunk_end
+		if viseme_stream == null:
+			analysis_resampler_needs_reset = true
 		if monitor.button_pressed:
 			playout_queue.append(conditioned)
 			queued_frames += conditioned.size()
@@ -346,6 +408,9 @@ func _update_diagnostics() -> void:
 	if viseme_stream != null:
 		viseme_status.text = "Viseme inference: %s" % viseme_stream.get_status()
 		viseme_bars.set_levels(viseme_stream.levels)
+	if tracking_adapter != null:
+		var age_ms := maxf(0.0, (Time.get_ticks_usec() - latest_pose_timestamp_usec) / 1000.0)
+		pose_status.text = "Webcam pose: %s | age %.1f ms" % [tracking_adapter.get_status(), age_ms]
 	avatar_status.text = "Avatar: %s" % avatar.status
 
 

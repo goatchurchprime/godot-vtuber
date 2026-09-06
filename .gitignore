@@ -1,5 +1,7 @@
 .godot/
 .import/
+*.import
+__pycache__/
 addons/twovoip
 addons/vizemes_mel
 addons/onnx_loader
@@ -8,4 +10,5 @@ vendor/OVRLipSyncNative/
 fixtures/
 avatars/
 experiments/**/private/
+.venv-mediapipe/
 *.log

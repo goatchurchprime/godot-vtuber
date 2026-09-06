@@ -1,0 +1,4 @@
+# MediaPipe does not currently publish wheels for the project's system Python 3.13.
+# Create this environment with Python 3.12; keep the bridge replaceable at its UDP boundary.
+mediapipe==0.10.21
+# MediaPipe supplies the matching contrib build; importing cv2 is the gate.

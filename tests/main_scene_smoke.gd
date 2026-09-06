@@ -15,7 +15,7 @@ func _run() -> void:
 	var stream: Variant = main.viseme_stream
 	assert(stream != null, "main scene did not create VizemeStream")
 	assert(stream.is_ready(), stream.status)
-	var avatar: Node = main.get_node("%Avatar")
+	var avatar: Node = main.avatar
 	assert(avatar.status.begins_with("avatar ready"), avatar.status)
 	print("Main scene ready | %s | %s" % [stream.status, avatar.status])
 	quit()
