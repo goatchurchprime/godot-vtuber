@@ -51,7 +51,7 @@ theme_override_constants/separation = 16
 layout_mode = 2
 size_flags_horizontal = 3
 
-[node name="PreviewLayout" type="HBoxContainer" parent="Margin/Rows/Columns/Preview"]
+[node name="PreviewLayout" type="HBoxContainer" parent="Margin/Rows/Columns/Preview" unique_id=2145246170]
 layout_mode = 2
 
 [node name="ViewportContainer" type="SubViewportContainer" parent="Margin/Rows/Columns/Preview/PreviewLayout" unique_id=1521969208]
@@ -61,31 +61,31 @@ stretch = true
 
 [node name="Viewport" type="SubViewport" parent="Margin/Rows/Columns/Preview/PreviewLayout/ViewportContainer" unique_id=426418724]
 handle_input_locally = false
-size = Vector2i(500, 748)
+size = Vector2i(827, 748)
 render_target_update_mode = 4
 
 [node name="Studio" parent="Margin/Rows/Columns/Preview/PreviewLayout/ViewportContainer/Viewport" unique_id=1291974210 instance=ExtResource("4_studio")]
 
-[node name="Framing" type="VBoxContainer" parent="Margin/Rows/Columns/Preview/PreviewLayout"]
+[node name="Framing" type="VBoxContainer" parent="Margin/Rows/Columns/Preview/PreviewLayout" unique_id=84829123]
 custom_minimum_size = Vector2(44, 0)
 layout_mode = 2
 theme_override_constants/separation = 4
 
-[node name="Up" type="Label" parent="Margin/Rows/Columns/Preview/PreviewLayout/Framing"]
+[node name="Up" type="Label" parent="Margin/Rows/Columns/Preview/PreviewLayout/Framing" unique_id=1446348584]
 layout_mode = 2
 text = "Up"
 horizontal_alignment = 1
 
-[node name="AvatarY" type="VSlider" parent="Margin/Rows/Columns/Preview/PreviewLayout/Framing"]
+[node name="AvatarY" type="VSlider" parent="Margin/Rows/Columns/Preview/PreviewLayout/Framing" unique_id=711888005]
 unique_name_in_owner = true
 layout_mode = 2
 size_flags_vertical = 3
+tooltip_text = "Move the avatar vertically in the broadcast frame"
 min_value = -1.0
 max_value = 1.0
 step = 0.01
-tooltip_text = "Move the avatar vertically in the broadcast frame"
 
-[node name="Down" type="Label" parent="Margin/Rows/Columns/Preview/PreviewLayout/Framing"]
+[node name="Down" type="Label" parent="Margin/Rows/Columns/Preview/PreviewLayout/Framing" unique_id=179994129]
 layout_mode = 2
 text = "Down"
 horizontal_alignment = 1
@@ -211,31 +211,37 @@ script = ExtResource("3_bars")
 unique_name_in_owner = true
 layout_mode = 2
 text = "Audio conditioning: unavailable"
+autowrap_mode = 1
 
 [node name="Visemes" type="Label" parent="Margin/Rows/Columns/Diagnostics/Margin/Rows" unique_id=1127928670]
 unique_name_in_owner = true
 layout_mode = 2
 text = "Viseme inference: unavailable"
+autowrap_mode = 1
 
 [node name="AvatarStatus" type="Label" parent="Margin/Rows/Columns/Diagnostics/Margin/Rows" unique_id=1508757058]
 unique_name_in_owner = true
 layout_mode = 2
 text = "Avatar: unavailable"
+autowrap_mode = 1
 
 [node name="Pose" type="Label" parent="Margin/Rows/Columns/Diagnostics/Margin/Rows" unique_id=1005780654]
 unique_name_in_owner = true
 layout_mode = 2
 text = "Webcam pose: unavailable"
+autowrap_mode = 1
 
 [node name="Clock" type="Label" parent="Margin/Rows/Columns/Diagnostics/Margin/Rows" unique_id=510732433]
 unique_name_in_owner = true
 layout_mode = 2
 text = "Playout sample: 0"
+autowrap_mode = 1
 
 [node name="Buffer" type="Label" parent="Margin/Rows/Columns/Diagnostics/Margin/Rows" unique_id=906151904]
 unique_name_in_owner = true
 layout_mode = 2
 text = "Buffered: 0 ms"
+autowrap_mode = 1
 
 [node name="Level" type="ProgressBar" parent="Margin/Rows/Columns/Diagnostics/Margin/Rows" unique_id=530185489]
 unique_name_in_owner = true
@@ -247,6 +253,7 @@ show_percentage = false
 unique_name_in_owner = true
 layout_mode = 2
 text = "RMS: silence"
+autowrap_mode = 1
 
 [node name="Note" type="Label" parent="Margin/Rows/Columns/Diagnostics/Margin/Rows" unique_id=1926118065]
 layout_mode = 2
@@ -265,14 +272,14 @@ unique_name_in_owner = true
 stream = SubResource("AudioStreamGenerator_monitor")
 bus = &"VTuberMonitor"
 
-[node name="CameraFeedbackWindow" type="Window" parent="."]
+[node name="CameraFeedbackWindow" type="Window" parent="." unique_id=1597610268]
 unique_name_in_owner = true
 title = "MediaPipe tracking feedback"
 initial_position = 1
 size = Vector2i(640, 480)
 visible = false
 
-[node name="Rows" type="VBoxContainer" parent="CameraFeedbackWindow"]
+[node name="Rows" type="VBoxContainer" parent="CameraFeedbackWindow" unique_id=1977462167]
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0

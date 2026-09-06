@@ -1,3 +1,4 @@
+@tool
 class_name AvatarDriver
 extends Node3D
 
@@ -29,6 +30,8 @@ const VISEME_SHAPE_ALIASES := [
 ]
 
 @export_file("*.vrm", "*.tscn", "*.scn", "*.glb", "*.gltf") var avatar_path := "res://avatars/freakhound_avatar.tscn"
+@export_range(0.0, 4.0, 0.05, "or_greater") var spring_stiffness_multiplier := 1.5
+@export_range(0.0, 3.0, 0.05, "or_greater") var spring_drag_multiplier := 1.25
 
 var status := "no avatar"
 var _meshes: Array[MeshInstance3D] = []
@@ -43,6 +46,8 @@ func _ready() -> void:
 func load_avatar(path: String) -> bool:
 	if not ResourceLoader.exists(path):
 		status = "avatar absent: %s" % path
+		if Engine.is_editor_hint():
+			_create_editor_standin()
 		return false
 	var packed := load(path) as PackedScene
 	if packed == null:
@@ -52,8 +57,65 @@ func load_avatar(path: String) -> bool:
 	avatar.name = "Avatar"
 	add_child(avatar)
 	_avatar_root = avatar as Node3D
+	# Imported VRMSecondary initializes after the scene enters the tree and first
+	# mirrors its original array to the root, so apply policy on the next turn.
+	call_deferred("_apply_spring_tuning", avatar)
 	_find_viseme_meshes(avatar)
 	return not _meshes.is_empty()
+
+
+func _apply_spring_tuning(root: Node) -> void:
+	# VRMSecondary mirrors this root property. Writing both directions would let
+	# the proxy overwrite our tuned resources with its original array.
+	var vrm_root := _find_spring_owner(root)
+	if vrm_root == null:
+		return
+	for spring: Resource in vrm_root.get("spring_bones"):
+		if not spring.has_meta(&"vtuber_base_stiffness"):
+			spring.set_meta(&"vtuber_base_stiffness", float(spring.get("stiffness_scale")))
+			spring.set_meta(&"vtuber_base_drag", float(spring.get("drag_force_scale")))
+		spring.set(
+			"stiffness_scale",
+			float(spring.get_meta(&"vtuber_base_stiffness")) * spring_stiffness_multiplier,
+		)
+		spring.set(
+			"drag_force_scale",
+			float(spring.get_meta(&"vtuber_base_drag")) * spring_drag_multiplier,
+		)
+
+
+func _find_spring_owner(node: Node) -> Node:
+	for property: Dictionary in node.get_property_list():
+		if property.name == &"spring_bones" and node.name != &"secondary":
+			return node
+	for child in node.get_children(true):
+		var found := _find_spring_owner(child)
+		if found != null:
+			return found
+	return null
+
+
+func _create_editor_standin() -> void:
+	var material := StandardMaterial3D.new()
+	material.albedo_color = Color(0.55, 0.62, 0.75)
+	var body_mesh := CapsuleMesh.new()
+	body_mesh.radius = 0.32
+	body_mesh.height = 1.35
+	var body := MeshInstance3D.new()
+	body.name = "EditorStandInBody"
+	body.mesh = body_mesh
+	body.material_override = material
+	body.position.y = 0.7
+	add_child(body)
+	var head_mesh := SphereMesh.new()
+	head_mesh.radius = 0.24
+	head_mesh.height = 0.48
+	var head := MeshInstance3D.new()
+	head.name = "EditorStandInHead"
+	head.mesh = head_mesh
+	head.material_override = material
+	head.position.y = 1.62
+	add_child(head)
 
 
 func _find_viseme_meshes(root: Node) -> void:

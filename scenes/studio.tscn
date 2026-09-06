@@ -1,46 +1,45 @@
-[gd_scene load_steps=3 format=3]
+[gd_scene format=3 uid="uid://cldtusvai8a77"]
 
-[ext_resource type="Script" path="res://src/avatar/avatar_driver.gd" id="1_avatar"]
+[ext_resource type="Script" uid="uid://dhubwmmqs6tr2" path="res://src/avatar/avatar_driver.gd" id="1_avatar"]
 
 [sub_resource type="Environment" id="Environment_studio"]
 background_mode = 1
 background_color = Color(0.055, 0.065, 0.09, 1)
 ambient_light_source = 3
 ambient_light_color = Color(0.62, 0.68, 0.82, 1)
-ambient_light_energy = 0.55
+ambient_light_energy = 0.25
 tonemap_mode = 2
 
-[node name="Studio" type="Node3D"]
+[node name="Studio" type="Node3D" unique_id=1449394555]
 
-[node name="Environment" type="WorldEnvironment" parent="."]
+[node name="Environment" type="WorldEnvironment" parent="." unique_id=181039712]
 environment = SubResource("Environment_studio")
 
-[node name="KeyLight" type="DirectionalLight3D" parent="."]
-rotation_degrees = Vector3(-35, -25, 0)
+[node name="KeyLight" type="DirectionalLight3D" parent="." unique_id=1609903839]
+transform = Transform3D(0.90630776, 0.24240388, -0.34618863, 0, 0.81915206, 0.57357645, 0.42261827, -0.5198368, 0.74240386, 0, 0, 0)
 light_color = Color(1, 0.88, 0.78, 1)
-light_energy = 1.15
+light_energy = 0.65
 shadow_enabled = true
 
-[node name="FillLight" type="OmniLight3D" parent="."]
-position = Vector3(-1.3, 1.75, 1.2)
+[node name="FillLight" type="OmniLight3D" parent="." unique_id=1106888508]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -1.3, 1.75, 1.2)
 light_color = Color(0.55, 0.7, 1, 1)
-light_energy = 2.2
+light_energy = 0.9
 omni_range = 4.0
 
-[node name="RimLight" type="SpotLight3D" parent="."]
-position = Vector3(1.2, 2.1, -0.6)
-rotation_degrees = Vector3(-155, 25, 180)
+[node name="RimLight" type="SpotLight3D" parent="." unique_id=505897491]
+transform = Transform3D(-0.9785163, -0.08713114, 0.18685341, 1.0348406e-07, 0.90630776, 0.42261836, -0.20616987, 0.41353887, -0.88683677, 1.2, 2.1, -3.1074758)
 light_color = Color(0.7, 0.8, 1, 1)
-light_energy = 3.0
+light_energy = 0.8
 spot_range = 5.0
 
-[node name="BroadcastCamera" type="Camera3D" parent="."]
+[node name="BroadcastCamera" type="Camera3D" parent="." unique_id=907660192]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.1, 3.2)
 current = true
 fov = 32.0
 
-[node name="AvatarAnchor" type="Node3D" parent="."]
+[node name="AvatarAnchor" type="Node3D" parent="." unique_id=511201333]
 
-[node name="Avatar" type="Node3D" parent="AvatarAnchor"]
+[node name="Avatar" type="Node3D" parent="AvatarAnchor" unique_id=1726280495]
 unique_name_in_owner = true
 script = ExtResource("1_avatar")

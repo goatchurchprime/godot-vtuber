@@ -97,6 +97,12 @@ Open `scenes/studio.tscn` in the Godot editor to author the broadcast set. Its
 `AvatarAnchor` are ordinary scene nodes and remain separate from microphone
 and synchronization controls.
 
+`AvatarDriver` runs in the editor: it displays the selected private avatar when
+available and a neutral body/head stand-in otherwise, so lighting and scale can
+be judged without running the application. Select the `Avatar` node to tune the
+exported spring stiffness and drag multipliers. These multipliers preserve the
+values authored in the VRM rather than replacing every spring with one value.
+
 The private `avatars/freakhound_avatar.tscn` is an inherited wrapper around
 `avatars/freakhound.vrm`. Open that scene to add or override spring-bone and
 collider settings after import. Both files remain ignored by Git and must be
