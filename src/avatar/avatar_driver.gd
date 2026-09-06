@@ -37,6 +37,9 @@ var status := "no avatar"
 var _meshes: Array[MeshInstance3D] = []
 var _shape_indices: Array[PackedInt32Array] = []
 var _avatar_root: Node3D
+var _skeleton: Skeleton3D
+var _head_bone := -1
+var _head_rest_rotation := Quaternion.IDENTITY
 
 
 func _ready() -> void:
@@ -57,11 +60,35 @@ func load_avatar(path: String) -> bool:
 	avatar.name = "Avatar"
 	add_child(avatar)
 	_avatar_root = avatar as Node3D
+	_find_head_bone(avatar)
 	# Imported VRMSecondary initializes after the scene enters the tree and first
 	# mirrors its original array to the root, so apply policy on the next turn.
 	call_deferred("_apply_spring_tuning", avatar)
 	_find_viseme_meshes(avatar)
 	return not _meshes.is_empty()
+
+
+func _find_head_bone(root: Node) -> void:
+	_skeleton = _find_skeleton(root)
+	_head_bone = -1
+	if _skeleton == null:
+		return
+	for bone_name: StringName in [&"Head", &"head", &"HEAD"]:
+		_head_bone = _skeleton.find_bone(bone_name)
+		if _head_bone >= 0:
+			break
+	if _head_bone >= 0:
+		_head_rest_rotation = _skeleton.get_bone_pose_rotation(_head_bone)
+
+
+func _find_skeleton(node: Node) -> Skeleton3D:
+	if node is Skeleton3D:
+		return node as Skeleton3D
+	for child in node.get_children():
+		var found := _find_skeleton(child)
+		if found != null:
+			return found
+	return null
 
 
 func _apply_spring_tuning(root: Node) -> void:
@@ -166,11 +193,26 @@ func set_visemes(weights: PackedFloat32Array) -> void:
 func set_pose(frame: Variant) -> void:
 	if _avatar_root == null:
 		return
-	var rotation_value: Variant = frame.landmarks.get("head_rotation_degrees", [])
-	if rotation_value is Array and rotation_value.size() == 3:
-		_avatar_root.rotation_degrees = Vector3(
-			float(rotation_value[0]), float(rotation_value[1]), float(rotation_value[2])
-		)
+	var head_rotation := Quaternion.IDENTITY
+	var has_head_rotation := false
+	var quaternion_value: Variant = frame.landmarks.get("head_rotation_quaternion", [])
+	if quaternion_value is Array and quaternion_value.size() == 4:
+		head_rotation = Quaternion(
+			float(quaternion_value[0]), float(quaternion_value[1]),
+			float(quaternion_value[2]), float(quaternion_value[3])
+		).normalized()
+		has_head_rotation = true
+	else:
+		var rotation_value: Variant = frame.landmarks.get("head_rotation_degrees", [])
+		if rotation_value is Array and rotation_value.size() == 3:
+			head_rotation = Quaternion.from_euler(Vector3(
+				deg_to_rad(float(rotation_value[0])),
+				deg_to_rad(float(rotation_value[1])),
+				deg_to_rad(float(rotation_value[2])),
+			))
+			has_head_rotation = true
+	if has_head_rotation and _skeleton != null and _head_bone >= 0:
+		_skeleton.set_bone_pose_rotation(_head_bone, _head_rest_rotation * head_rotation)
 	var shoulder_value: Variant = frame.landmarks.get("shoulder_center", [])
 	if shoulder_value is Array and shoulder_value.size() >= 1:
 		_avatar_root.position.x = clampf(float(shoulder_value[0]), -0.25, 0.25)
