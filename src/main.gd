@@ -46,6 +46,13 @@ const DIAGNOSTIC_INTERVAL_SEC := 0.25
 @onready var avatar_anchor: Node3D = $Margin/Rows/Columns/Preview/PreviewLayout/ViewportContainer/Viewport/Studio/AvatarAnchor
 @onready var avatar: Node = $Margin/Rows/Columns/Preview/PreviewLayout/ViewportContainer/Viewport/Studio/AvatarAnchor/Avatar
 @onready var avatar_y: VSlider = %AvatarY
+@onready var broadcast_viewport: SubViewport = $Margin/Rows/Columns/Preview/PreviewLayout/ViewportContainer/Viewport
+@onready var broadcast_camera: Camera3D = $Margin/Rows/Columns/Preview/PreviewLayout/ViewportContainer/Viewport/Studio/BroadcastCamera
+@onready var studio_environment: WorldEnvironment = $Margin/Rows/Columns/Preview/PreviewLayout/ViewportContainer/Viewport/Studio/Environment
+@onready var camera_zoom: HSlider = %CameraZoom
+@onready var camera_yaw: HSlider = %CameraYaw
+@onready var camera_pitch: HSlider = %CameraPitch
+@onready var transparent_background: CheckButton = %TransparentBackground
 @onready var camera_feedback: TextureRect = %CameraFeedback
 @onready var camera_feedback_status: Label = %CameraFeedbackStatus
 @onready var camera_feedback_window: Window = %CameraFeedbackWindow
@@ -76,6 +83,8 @@ var analysis_resampler_needs_reset := true
 var _diagnostic_elapsed := 0.0
 var xr_submission_viewport: SubViewport
 var human_arm_solver := HumanArmSolverScript.new()
+var _camera_base_rotation := Vector3.ZERO
+var _opaque_background_color := Color(0.055, 0.065, 0.09, 1.0)
 
 
 func _ready() -> void:
@@ -98,6 +107,12 @@ func _ready() -> void:
 	input_device.item_selected.connect(_select_input_device)
 	output_device.item_selected.connect(_select_output_device)
 	avatar_y.value_changed.connect(_set_avatar_height)
+	_camera_base_rotation = broadcast_camera.rotation
+	_opaque_background_color = studio_environment.environment.background_color
+	camera_zoom.value_changed.connect(_set_camera_zoom)
+	camera_yaw.value_changed.connect(_set_camera_framing)
+	camera_pitch.value_changed.connect(_set_camera_framing)
+	transparent_background.toggled.connect(_set_transparent_background)
 	camera_feedback_window.close_requested.connect(camera_feedback_window.hide)
 	audio_status.text = _availability("Audio conditioning", "TwovoipOpusEncoder")
 	viseme_status.text = _availability("Viseme inference", "OnnxLoader")
@@ -159,8 +174,8 @@ func _copy_tracking_status() -> void:
 
 
 func _calibrate_hands() -> void:
-	avatar.reset_hand_orientation_calibration()
-	calibrate_hands_button.text = "Calibrated"
+	avatar.begin_hand_orientation_calibration()
+	calibrate_hands_button.text = "Calibrated + saved"
 
 
 func _load_optional_extension(path: String, provided_class: StringName) -> void:
@@ -287,6 +302,23 @@ func _select_tracking_backend(index: int) -> void:
 
 func _set_avatar_height(height: float) -> void:
 	avatar_anchor.position.y = height
+
+
+func _set_camera_zoom(fov_degrees: float) -> void:
+	broadcast_camera.fov = fov_degrees
+
+
+func _set_camera_framing(_ignored: float) -> void:
+	broadcast_camera.rotation = _camera_base_rotation + Vector3(
+		deg_to_rad(camera_pitch.value), deg_to_rad(camera_yaw.value), 0.0,
+	)
+
+
+func _set_transparent_background(enabled: bool) -> void:
+	broadcast_viewport.transparent_bg = enabled
+	var color := _opaque_background_color
+	color.a = 0.0 if enabled else 1.0
+	studio_environment.environment.background_color = color
 
 
 func _set_mouth_attack(duration_ms: float) -> void:

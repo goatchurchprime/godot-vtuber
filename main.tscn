@@ -213,6 +213,58 @@ unique_name_in_owner = true
 layout_mode = 2
 size_flags_horizontal = 3
 
+[node name="CameraZoomRow" type="HBoxContainer" parent="Margin/Rows/Columns/Diagnostics/Margin/Rows"]
+layout_mode = 2
+
+[node name="Label" type="Label" parent="Margin/Rows/Columns/Diagnostics/Margin/Rows/CameraZoomRow"]
+layout_mode = 2
+text = "Camera zoom"
+
+[node name="CameraZoom" type="HSlider" parent="Margin/Rows/Columns/Diagnostics/Margin/Rows/CameraZoomRow"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+tooltip_text = "Lower field of view zooms toward the head"
+min_value = 12.0
+max_value = 60.0
+step = 1.0
+value = 32.0
+
+[node name="CameraYawRow" type="HBoxContainer" parent="Margin/Rows/Columns/Diagnostics/Margin/Rows"]
+layout_mode = 2
+
+[node name="Label" type="Label" parent="Margin/Rows/Columns/Diagnostics/Margin/Rows/CameraYawRow"]
+layout_mode = 2
+text = "Camera yaw"
+
+[node name="CameraYaw" type="HSlider" parent="Margin/Rows/Columns/Diagnostics/Margin/Rows/CameraYawRow"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+min_value = -30.0
+max_value = 30.0
+step = 1.0
+
+[node name="CameraPitchRow" type="HBoxContainer" parent="Margin/Rows/Columns/Diagnostics/Margin/Rows"]
+layout_mode = 2
+
+[node name="Label" type="Label" parent="Margin/Rows/Columns/Diagnostics/Margin/Rows/CameraPitchRow"]
+layout_mode = 2
+text = "Camera down"
+
+[node name="CameraPitch" type="HSlider" parent="Margin/Rows/Columns/Diagnostics/Margin/Rows/CameraPitchRow"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+min_value = -20.0
+max_value = 30.0
+step = 1.0
+
+[node name="TransparentBackground" type="CheckButton" parent="Margin/Rows/Columns/Diagnostics/Margin/Rows"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "Transparent background (OBS)"
+
 [node name="Pose" type="LineEdit" parent="Margin/Rows/Columns/Diagnostics/Margin/Rows" unique_id=1005780654]
 unique_name_in_owner = true
 layout_mode = 2

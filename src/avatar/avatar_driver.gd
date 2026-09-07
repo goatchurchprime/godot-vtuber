@@ -8,6 +8,14 @@ const VISEMES := [
 	"sil", "PP", "FF", "TH", "DD", "kk", "CH", "SS",
 	"nn", "RR", "aa", "E", "I", "O", "U",
 ]
+const HAND_CALIBRATION_PATH := "user://hand-orientation.cfg"
+# Measured with Oculus Touch grips held horizontally, palms down and fingers
+# toward the broadcast camera. These are only fallbacks until the user saves a
+# device-specific calibration.
+const DEFAULT_RAW_CONTROLLER_REFERENCE := {
+	"right": Quaternion(0.44170582, -0.23425385, -0.70148587, 0.50787669),
+	"left": Quaternion(0.41214713, 0.32378277, 0.62650794, 0.57687718),
+}
 
 ## Common names used by Ready Player Me, VRChat-compatible meshes and VRM 0.x.
 ## Keeping this policy here lets the audio pipeline remain avatar-format agnostic.
@@ -66,6 +74,7 @@ var _arm_root_bones: Dictionary = {}
 var _arm_tip_rest_basis: Dictionary = {}
 var _arm_neutral_target_basis: Dictionary = {}
 var _arm_controller_reference: Dictionary = {}
+var _save_hand_calibration_pending := false
 var _arm_debug_hand: Dictionary = {}
 var _arm_debug_elbow: Dictionary = {}
 var _arm_debug_achieved: Dictionary = {}
@@ -217,6 +226,7 @@ func _configure_arm_ik() -> void:
 		_arm_neutral_target_basis[side] = _forward_facing_hand_basis(side)
 		_create_arm_debug(side)
 		_configure_finger_controls(side, tip_bone)
+	_load_hand_calibration()
 
 
 func _configure_finger_controls(side: String, hand_bone: int) -> void:
@@ -407,6 +417,44 @@ func reset_hand_orientation_calibration() -> void:
 		_arm_neutral_target_basis[side] = _forward_facing_hand_basis(side)
 
 
+func begin_hand_orientation_calibration() -> void:
+	_save_hand_calibration_pending = true
+	reset_hand_orientation_calibration()
+
+
+func _load_hand_calibration() -> void:
+	var config := ConfigFile.new()
+	if config.load(HAND_CALIBRATION_PATH) == OK:
+		for side: String in ["left", "right"]:
+			var value: Variant = config.get_value("controller_reference", side, null)
+			if value is Quaternion:
+				_arm_controller_reference[side] = Basis(value as Quaternion)
+	for side: String in ["left", "right"]:
+		if not _arm_controller_reference.has(side):
+			var raw_basis := Basis(DEFAULT_RAW_CONTROLLER_REFERENCE[side] as Quaternion)
+			var mirror_basis := Basis.from_scale(Vector3(1.0, 1.0, -1.0))
+			_arm_controller_reference[side] = mirror_basis * raw_basis * mirror_basis
+
+
+func _save_hand_calibration_if_ready() -> void:
+	if not _save_hand_calibration_pending \
+			or not _arm_controller_reference.has("left") \
+			or not _arm_controller_reference.has("right"):
+		return
+	var config := ConfigFile.new()
+	for side: String in ["left", "right"]:
+		config.set_value(
+			"controller_reference", side,
+			(_arm_controller_reference[side] as Basis).get_rotation_quaternion(),
+		)
+	var error := config.save(HAND_CALIBRATION_PATH)
+	if error == OK:
+		_save_hand_calibration_pending = false
+		print("OPENXR_HAND_CALIBRATION_SAVED ", ProjectSettings.globalize_path(HAND_CALIBRATION_PATH))
+	else:
+		push_error("Could not save hand calibration: %s" % error_string(error))
+
+
 func _forward_facing_hand_basis(side: String) -> Basis:
 	var local_finger: Vector3 = _arm_hand_axes.get(side, Vector3(0.0, 0.0, -1.0))
 	var local_palm: Vector3 = _arm_palm_normal_axes.get(side, Vector3.DOWN)
@@ -586,6 +634,7 @@ func set_pose(frame: Variant) -> void:
 	else:
 		_apply_arm_pose(frame.landmarks, "left", "left")
 		_apply_arm_pose(frame.landmarks, "right", "right")
+	_save_hand_calibration_if_ready()
 	var shoulder_value: Variant = frame.landmarks.get("shoulder_center", [])
 	if shoulder_value is Array and shoulder_value.size() >= 1:
 		_avatar_root.position.x = clampf(float(shoulder_value[0]), -0.25, 0.25)

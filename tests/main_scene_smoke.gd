@@ -32,6 +32,8 @@ func _run() -> void:
 	assert(main.screenshot_button is Button)
 	assert(main.copy_status_button is Button)
 	assert(main.calibrate_hands_button is Button)
+	assert(main.camera_zoom is HSlider and main.camera_yaw is HSlider and main.camera_pitch is HSlider)
+	assert(main.transparent_background is CheckButton)
 	assert(main.latest_pose_frame == null)
 	assert(main.tracking_selector.selected == 0)
 	assert(main.xr_submission_viewport == null)
@@ -39,6 +41,11 @@ func _run() -> void:
 	assert(is_equal_approx(main.avatar_anchor.position.y, 0.25))
 	var camera: Camera3D = main.get_node("Margin/Rows/Columns/Preview/PreviewLayout/ViewportContainer/Viewport/Studio/BroadcastCamera")
 	assert(camera.position.z >= 3.0, "broadcast camera is still framed as an extreme close-up")
+	main.camera_zoom.value = 24.0
+	assert(is_equal_approx(camera.fov, 24.0))
+	main.transparent_background.button_pressed = true
+	assert(main.broadcast_viewport.transparent_bg)
+	assert(is_zero_approx(main.studio_environment.environment.background_color.a))
 	var springs: Array = avatar._avatar_root.get("spring_bones")
 	assert(springs.size() == 3, "expected two ear springs and one hair spring")
 	assert(float(springs[0].stiffness_scale) > 1.1, "ear spring tuning was not applied: %s" % springs[0].stiffness_scale)
