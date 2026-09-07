@@ -69,7 +69,6 @@ func _run() -> void:
 	}
 	HumanArmSolverScript.new().enrich(pose)
 	avatar.set_pose(pose)
-	assert(avatar._spine_ik.is_running(), "head translation should activate seated spine IK")
 	assert(avatar._spine_ik.target.origin.distance_to(avatar._head_reference_position) > 0.12)
 	var head_delta: Quaternion = avatar._spine_target_basis.inverse() * avatar._spine_ik.target.basis
 	assert(head_delta.get_euler().x < 0.0, "tracked nod pitch should be mirrored")
@@ -87,12 +86,13 @@ func _run() -> void:
 	assert(avatar._arm_debug_target_palm.size() == 2 and avatar._arm_debug_achieved_palm.size() == 2)
 	assert(not (avatar._arm_hand_axes.right as Vector3).is_zero_approx())
 	var right_shoulder: Vector3 = avatar._skeleton.get_bone_global_pose(int(avatar._arm_root_bones.right)).origin
-	assert(right_ik.magnet.y < right_shoulder.y, "pole target must stay below the shoulder")
-	assert(right_ik.magnet.x < right_shoulder.x, "right-arm pole target must stay outward")
-	var first_pole := right_ik.magnet
+	var right_pole: Vector3 = avatar._arm_desired_pole.right
+	assert(right_pole.y < right_shoulder.y, "pole target must stay below the shoulder")
+	assert(right_pole.x < right_shoulder.x, "right-arm pole target must stay outward")
+	var first_pole := right_pole
 	pose.landmarks.left_hand.position[1] += 0.20
 	avatar.set_pose(pose)
-	assert(right_ik.magnet.distance_to(first_pole) > 0.09, "elbow pole should follow wrist motion")
+	assert((avatar._arm_desired_pole.right as Vector3).distance_to(first_pole) > 0.09, "elbow pole should follow wrist motion")
 	pose.landmarks.left_hand.position[1] -= 0.20
 	avatar.set_pose(pose)
 	var neutral_hand_basis := right_ik.target.basis
@@ -101,15 +101,18 @@ func _run() -> void:
 	assert(not right_ik.target.basis.is_equal_approx(neutral_hand_basis), "controller rotation should rotate the avatar wrist")
 	avatar.reset_hand_orientation_calibration()
 	avatar.set_pose(pose)
-	var calibrated_finger: Vector3 = right_ik.target.basis * avatar._arm_hand_axes.right
-	var calibrated_palm: Vector3 = right_ik.target.basis * avatar._arm_palm_normal_axes.right
+	var calibrated_basis: Basis = (avatar._arm_desired_target.right as Transform3D).basis
+	var calibrated_finger: Vector3 = calibrated_basis * avatar._arm_hand_axes.right
+	var calibrated_palm: Vector3 = calibrated_basis * avatar._arm_palm_normal_axes.right
 	assert(calibrated_finger.dot(Vector3.BACK) > 0.99, "calibrated fingers should point forward from the avatar")
 	assert(calibrated_palm.dot(Vector3.DOWN) > 0.99, "calibrated palms should face down")
 	await process_frame
 	await process_frame
 	assert(not avatar._skeleton.get_bone_pose_rotation(finger_control.bone).is_equal_approx(finger_control.rest), "finger curl should survive IK processing")
 	var achieved_attachment := avatar._arm_debug_attachment.right as BoneAttachment3D
-	assert(achieved_attachment.transform.origin.distance_to(right_ik.target.origin) < 0.25, "final hand attachment should follow the solved wrist")
+	var desired_right: Transform3D = avatar._arm_desired_target.right
+	var wrist_error := achieved_attachment.transform.origin.distance_to(desired_right.origin)
+	assert(wrist_error < 0.10, "final hand attachment should follow the solved wrist after torso IK: %.3f m" % wrist_error)
 	var environment: WorldEnvironment = main.get_node("Margin/Rows/Columns/Preview/PreviewLayout/ViewportContainer/Viewport/Studio/Environment")
 	assert(environment.environment.ambient_light_energy <= 0.25, "studio ambient light is still over-bright")
 	print("Main scene ready | %s | %s" % [stream.status, avatar.status])

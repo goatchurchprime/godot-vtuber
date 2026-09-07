@@ -1,6 +1,7 @@
 [gd_scene format=3 uid="uid://cldtusvai8a77"]
 
 [ext_resource type="Script" uid="uid://dhubwmmqs6tr2" path="res://src/avatar/avatar_driver.gd" id="1_avatar"]
+[ext_resource type="Script" uid="uid://c68idjafglcfp" path="res://src/studio.gd" id="2_studio"]
 
 [sub_resource type="Environment" id="Environment_studio"]
 background_mode = 1
@@ -10,31 +11,45 @@ ambient_light_color = Color(0.62, 0.68, 0.82, 1)
 ambient_light_energy = 0.25
 tonemap_mode = 2
 
+[sub_resource type="StandardMaterial3D" id="StandInMaterial"]
+albedo_color = Color(0.58, 0.64, 0.76, 1)
+roughness = 0.72
+
+[sub_resource type="CapsuleMesh" id="StandInBody"]
+material = SubResource("StandInMaterial")
+radius = 0.3
+height = 1.25
+
+[sub_resource type="SphereMesh" id="StandInHead"]
+material = SubResource("StandInMaterial")
+radius = 0.24
+height = 0.48
+
 [node name="Studio" type="Node3D" unique_id=1449394555]
+script = ExtResource("2_studio")
 
 [node name="Environment" type="WorldEnvironment" parent="." unique_id=181039712]
 environment = SubResource("Environment_studio")
 
 [node name="KeyLight" type="DirectionalLight3D" parent="." unique_id=1609903839]
-transform = Transform3D(0.90630776, 0.24240388, -0.34618863, 0, 0.81915206, 0.57357645, 0.42261827, -0.5198368, 0.74240386, 0, 0, 0)
+transform = Transform3D(0.6956746, -0.41203272, 0.58844376, 0, 0.8191521, 0.57357645, -0.71835715, -0.39902252, 0.56986326, 1.0547282, 2.0686662, 0.853168)
 light_color = Color(1, 0.88, 0.78, 1)
-light_energy = 0.65
+light_energy = 0.15
 shadow_enabled = true
 
 [node name="FillLight" type="OmniLight3D" parent="." unique_id=1106888508]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -1.3, 1.75, 1.2)
-light_color = Color(0.55, 0.7, 1, 1)
-light_energy = 0.9
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.6274077, 1.5055869, 1.2)
+light_color = Color(0.7647059, 0.4745098, 0.77254903, 1)
+light_energy = 0.35
 omni_range = 4.0
 
 [node name="RimLight" type="SpotLight3D" parent="." unique_id=505897491]
-transform = Transform3D(-0.9785163, -0.08713114, 0.18685341, 1.0348406e-07, 0.90630776, 0.42261836, -0.20616987, 0.41353887, -0.88683677, 1.2, 2.1, -3.1074758)
+transform = Transform3D(-0.9785163, -0.08713106, 0.1868534, 1.0348406e-07, 0.90630776, 0.42261833, -0.20616987, 0.4135389, -0.8868368, 0.37388635, 2.1, -3.1074758)
 light_color = Color(0.7, 0.8, 1, 1)
 light_energy = 0.8
-spot_range = 5.0
 
 [node name="BroadcastCamera" type="Camera3D" parent="." unique_id=907660192]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.1, 3.2)
+transform = Transform3D(0.9314882, -0.014421174, 0.36348552, 0, 0.99921393, 0.039643496, -0.3637715, -0.03692745, 0.930756, 1.0508777, 1.2942555, 3.2)
 current = true
 fov = 32.0
 
@@ -43,3 +58,15 @@ fov = 32.0
 [node name="Avatar" type="Node3D" parent="AvatarAnchor" unique_id=1726280495]
 unique_name_in_owner = true
 script = ExtResource("1_avatar")
+
+[node name="EditorLightingStandIn" type="Node3D" parent="." unique_id=320080469]
+
+[node name="Body" type="MeshInstance3D" parent="EditorLightingStandIn" unique_id=144182856]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.72, 0)
+visible = false
+mesh = SubResource("StandInBody")
+
+[node name="Head" type="MeshInstance3D" parent="EditorLightingStandIn" unique_id=2006617806]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.58, 0)
+visible = false
+mesh = SubResource("StandInHead")

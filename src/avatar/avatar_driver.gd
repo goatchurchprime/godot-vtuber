@@ -71,6 +71,9 @@ var _spine_target_basis := Basis.IDENTITY
 var _arm_ik: Dictionary = {}
 var _arm_tip_bones: Dictionary = {}
 var _arm_root_bones: Dictionary = {}
+var _arm_root_rest_pose: Dictionary = {}
+var _arm_desired_target: Dictionary = {}
+var _arm_desired_pole: Dictionary = {}
 var _arm_tip_rest_basis: Dictionary = {}
 var _arm_neutral_target_basis: Dictionary = {}
 var _arm_controller_reference: Dictionary = {}
@@ -152,8 +155,11 @@ func _find_head_bone(root: Node) -> void:
 		if _chest_bone >= 0:
 			_chest_rest_rotation = _skeleton.get_bone_pose_rotation(_chest_bone)
 			break
-	_configure_spine_ik()
 	_configure_arm_ik()
+	# Skeleton modifiers are evaluated back-to-front. Add the torso modifier
+	# after the arm modifiers so the spine resolves first and the arms finish at
+	# their world-space wrist targets instead of being carried along afterward.
+	_configure_spine_ik()
 
 
 func _configure_spine_ik() -> void:
@@ -185,6 +191,9 @@ func _configure_arm_ik() -> void:
 	_arm_ik.clear()
 	_arm_tip_bones.clear()
 	_arm_root_bones.clear()
+	_arm_root_rest_pose.clear()
+	_arm_desired_target.clear()
+	_arm_desired_pole.clear()
 	_arm_tip_rest_basis.clear()
 	_arm_neutral_target_basis.clear()
 	_arm_controller_reference.clear()
@@ -220,6 +229,7 @@ func _configure_arm_ik() -> void:
 		var tip_bone := _skeleton.find_bone(tip_name)
 		_arm_tip_bones[side] = tip_bone
 		_arm_root_bones[side] = _skeleton.find_bone(root_name)
+		_arm_root_rest_pose[side] = _skeleton.get_bone_global_pose(_arm_root_bones[side])
 		_arm_tip_rest_basis[side] = _skeleton.get_bone_global_pose(tip_bone).basis
 		_arm_hand_axes[side] = _find_hand_forward_axis(tip_bone)
 		_arm_palm_normal_axes[side] = _find_palm_normal_axis(tip_bone, _arm_hand_axes[side])
@@ -260,7 +270,7 @@ func _apply_hand_controls(side: String, hand_value: Dictionary) -> void:
 	for control: Dictionary in _finger_controls.get(side, []):
 		var weight := trigger if bool(control.trigger) else grip
 		var rotation := control.rest as Quaternion
-		rotation *= Quaternion(control.axis as Vector3, float(control.amount) * weight)
+		rotation *= Quaternion(control.axis as Vector3, -float(control.amount) * weight)
 		_skeleton.set_bone_pose_rotation(int(control.bone), rotation)
 
 
@@ -626,8 +636,10 @@ func set_pose(frame: Variant) -> void:
 		displacement = displacement.limit_length(maximum_head_translation)
 		_spine_ik.target.origin = _head_reference_position + displacement
 		_spine_ik.magnet = _head_reference_position + displacement * 0.35 + Vector3(0.0, -0.30, -0.45)
-		if not _spine_ik.is_running():
-			_spine_ik.start()
+		# Resolve the torso once for this observation before updating the arm
+		# chains. Running overlapping continuous SkeletonIK modifiers lets the
+		# later torso pass carry already-solved wrists away from their targets.
+		_spine_ik.start(true)
 	if mirror_controller_assignment:
 		_apply_arm_pose(frame.landmarks, "right", "left")
 		_apply_arm_pose(frame.landmarks, "left", "right")
@@ -672,17 +684,24 @@ func _apply_arm_pose(landmarks: Dictionary, target_side: String, source_side: St
 		var controller_reference: Basis = _arm_controller_reference[target_side]
 		var controller_delta := controller_basis * controller_reference.inverse()
 		target_basis = controller_delta * target_basis
-	ik.target = Transform3D(target_basis.orthonormalized(), hand_position)
-	ik.magnet = pole_position
+	var desired_target := Transform3D(target_basis.orthonormalized(), hand_position)
+	_arm_desired_target[target_side] = desired_target
+	_arm_desired_pole[target_side] = pole_position
+	var root_rest: Transform3D = _arm_root_rest_pose.get(target_side, Transform3D.IDENTITY)
+	var root_current := _skeleton.get_bone_global_pose(root_bone) \
+		if root_bone >= 0 else root_rest
+	var torso_delta := root_current * root_rest.affine_inverse()
+	ik.target = torso_delta.affine_inverse() * desired_target
+	ik.magnet = torso_delta.affine_inverse() * pole_position
 	var hand_debug := _arm_debug_hand.get(target_side) as MeshInstance3D
 	if hand_debug != null:
-		hand_debug.transform = ik.target
+		hand_debug.transform = desired_target
 	var target_ray := _arm_debug_target_ray.get(target_side) as Node3D
 	if target_ray != null:
-		target_ray.transform = _hand_ray_transform(ik.target, target_side)
+		target_ray.transform = _hand_ray_transform(desired_target, target_side)
 	var target_palm := _arm_debug_target_palm.get(target_side) as Node3D
 	if target_palm != null:
-		target_palm.transform = _axis_ray_transform(ik.target, _arm_palm_normal_axes[target_side])
+		target_palm.transform = _axis_ray_transform(desired_target, _arm_palm_normal_axes[target_side])
 	var elbow_debug := _arm_debug_elbow.get(target_side) as MeshInstance3D
 	if elbow_debug != null:
 		elbow_debug.position = pole_position
@@ -714,7 +733,7 @@ func get_ik_diagnostic() -> Dictionary:
 		var attachment := _arm_debug_attachment.get(side) as BoneAttachment3D
 		result[side] = {
 			"running": ik != null and ik.is_running(),
-			"target": _transform_array(ik.target) if ik != null else [],
+			"target": _transform_array(_arm_desired_target.get(side, ik.target)) if ik != null else [],
 			"achieved": _transform_array(attachment.transform) if attachment != null else [],
 			"finger_axis": _vector_array(_arm_hand_axes.get(side, Vector3.ZERO)),
 			"palm_normal": _vector_array(_arm_palm_normal_axes.get(side, Vector3.ZERO)),

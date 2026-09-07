@@ -102,28 +102,36 @@ vertical_scroll_mode = 1
 [node name="Rows" type="VBoxContainer" parent="Margin/Rows/Columns/Diagnostics/Margin" unique_id=200014668]
 layout_mode = 2
 size_flags_horizontal = 3
-theme_override_constants/separation = 8
+theme_override_constants/separation = 4
 
 [node name="Heading" type="Label" parent="Margin/Rows/Columns/Diagnostics/Margin/Rows" unique_id=981377312]
 layout_mode = 2
 theme_override_font_sizes/font_size = 20
 text = "Pipeline"
 
-[node name="InputDeviceLabel" type="Label" parent="Margin/Rows/Columns/Diagnostics/Margin/Rows" unique_id=481104753]
+[node name="InputDeviceRow" type="HBoxContainer" parent="Margin/Rows/Columns/Diagnostics/Margin/Rows"]
+layout_mode = 2
+
+[node name="InputDeviceLabel" type="Label" parent="Margin/Rows/Columns/Diagnostics/Margin/Rows/InputDeviceRow" unique_id=481104753]
 layout_mode = 2
 text = "Input device"
 
-[node name="InputDevice" type="OptionButton" parent="Margin/Rows/Columns/Diagnostics/Margin/Rows" unique_id=663368958]
+[node name="InputDevice" type="OptionButton" parent="Margin/Rows/Columns/Diagnostics/Margin/Rows/InputDeviceRow" unique_id=663368958]
 unique_name_in_owner = true
 layout_mode = 2
+size_flags_horizontal = 3
 
-[node name="OutputDeviceLabel" type="Label" parent="Margin/Rows/Columns/Diagnostics/Margin/Rows" unique_id=1270738964]
+[node name="OutputDeviceRow" type="HBoxContainer" parent="Margin/Rows/Columns/Diagnostics/Margin/Rows"]
+layout_mode = 2
+
+[node name="OutputDeviceLabel" type="Label" parent="Margin/Rows/Columns/Diagnostics/Margin/Rows/OutputDeviceRow" unique_id=1270738964]
 layout_mode = 2
 text = "Output device"
 
-[node name="OutputDevice" type="OptionButton" parent="Margin/Rows/Columns/Diagnostics/Margin/Rows" unique_id=1412547296]
+[node name="OutputDevice" type="OptionButton" parent="Margin/Rows/Columns/Diagnostics/Margin/Rows/OutputDeviceRow" unique_id=1412547296]
 unique_name_in_owner = true
 layout_mode = 2
+size_flags_horizontal = 3
 
 [node name="Controls" type="HBoxContainer" parent="Margin/Rows/Columns/Diagnostics/Margin/Rows" unique_id=103953256]
 layout_mode = 2
