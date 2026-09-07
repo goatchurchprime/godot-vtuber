@@ -44,12 +44,14 @@ func _run() -> void:
 	assert(float(springs[0].stiffness_scale) > 1.1, "ear spring tuning was not applied: %s" % springs[0].stiffness_scale)
 	assert(float(springs[2].stiffness_scale) > 0.8, "hair spring tuning was not applied: %s" % springs[2].stiffness_scale)
 	assert(avatar._arm_ik.size() == 2, "expected standard IK chains for both arms")
+	assert(avatar._spine_ik != null, "expected seated spine IK from the fixed torso to the head")
 	var left_ik: SkeletonIK3D = avatar._arm_ik.left
 	var right_ik: SkeletonIK3D = avatar._arm_ik.right
 	assert(not left_ik.is_running(), "left IK must wait for a valid wrist target")
 	assert(not right_ik.is_running(), "right IK must wait for a valid wrist target")
 	var pose = PoseFrameScript.new(1)
 	pose.landmarks = {
+		"head_position": [0.08, 0.04, -0.10],
 		"head_rotation_quaternion": [sin(0.1), 0.0, 0.0, cos(0.1)],
 		"left_hand": {
 			"position": [-0.45, -0.38, -0.12],
@@ -60,7 +62,9 @@ func _run() -> void:
 	}
 	HumanArmSolverScript.new().enrich(pose)
 	avatar.set_pose(pose)
-	var head_delta: Quaternion = avatar._head_rest_rotation.inverse() * avatar._skeleton.get_bone_pose_rotation(avatar._head_bone)
+	assert(avatar._spine_ik.is_running(), "head translation should activate seated spine IK")
+	assert(avatar._spine_ik.target.origin.distance_to(avatar._head_reference_position) > 0.12)
+	var head_delta: Quaternion = avatar._spine_target_basis.inverse() * avatar._spine_ik.target.basis
 	assert(head_delta.get_euler().x < 0.0, "tracked nod pitch should be mirrored")
 	assert(not left_ik.is_running(), "mirrored untracked left IK should remain stopped")
 	assert(right_ik.is_running(), "left controller should drive screen-left/right-arm IK in mirror mode")
@@ -96,6 +100,7 @@ func _run() -> void:
 	assert(calibrated_palm.dot(Vector3.DOWN) > 0.99, "calibrated palms should face down")
 	await process_frame
 	await process_frame
+	assert(not avatar._skeleton.get_bone_pose_rotation(finger_control.bone).is_equal_approx(finger_control.rest), "finger curl should survive IK processing")
 	var achieved_attachment := avatar._arm_debug_attachment.right as BoneAttachment3D
 	assert(achieved_attachment.transform.origin.distance_to(right_ik.target.origin) < 0.25, "final hand attachment should follow the solved wrist")
 	var environment: WorldEnvironment = main.get_node("Margin/Rows/Columns/Preview/PreviewLayout/ViewportContainer/Viewport/Studio/Environment")

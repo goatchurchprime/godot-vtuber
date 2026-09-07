@@ -23,6 +23,7 @@ var _tracked_hands := 0
 var _hand_tracker_candidates := 0
 var _last_tracker_diagnostic := ""
 var _hand_inputs := {"left": Vector2.ZERO, "right": Vector2.ZERO}
+var _logged_hand_inputs := {"left": Vector2.ZERO, "right": Vector2.ZERO}
 
 
 func start() -> bool:
@@ -36,6 +37,8 @@ func start() -> bool:
 			return false
 		_owns_interface = true
 	_running = true
+	if _interface.has_method("set_action_set_active"):
+		_interface.call("set_action_set_active", "godot", true)
 	status = "OpenXR session initialized; waiting for tracking"
 	return true
 
@@ -109,10 +112,19 @@ func _append_hand(frame: Variant, key: String, hand: int) -> void:
 		_hand_inputs[input_key] = Vector2(
 			float(hand_data.get("trigger", 0.0)), float(hand_data.get("grip", 0.0))
 		)
+		_log_hand_input_change(input_key, _hand_inputs[input_key])
 		frame.landmarks[key] = hand_data
 		frame.confidence[key] = 1.0
 		_tracked_hands += 1
 		return
+
+
+func _log_hand_input_change(side: String, value: Vector2) -> void:
+	var previous: Vector2 = _logged_hand_inputs.get(side, Vector2.ZERO)
+	var crossed_boundary := (previous.length() <= 0.05) != (value.length() <= 0.05)
+	if crossed_boundary or previous.distance_to(value) >= 0.10:
+		_logged_hand_inputs[side] = value
+		print("OPENXR_INPUT %s trigger=%.2f grip=%.2f" % [side, value.x, value.y])
 
 
 func _maximum_input(tracker: Variant, action_names: Array[StringName]) -> float:

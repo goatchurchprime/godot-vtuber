@@ -41,6 +41,8 @@ const VISEME_SHAPE_ALIASES := [
 @export_range(0.05, 1.0, 0.01) var elbow_pole_distance := 0.20
 @export_range(0.0, 1.0, 0.01) var chest_follow_strength := 0.28
 @export_range(0.05, 1.0, 0.01) var chest_follow_time_sec := 0.25
+@export_range(0.1, 2.0, 0.05) var head_translation_scale := 1.0
+@export_range(0.05, 0.6, 0.01) var maximum_head_translation := 0.35
 
 var status := "no avatar"
 var _meshes: Array[MeshInstance3D] = []
@@ -56,6 +58,8 @@ var _chest_displayed_delta := Quaternion.IDENTITY
 var _target_visemes := PackedFloat32Array()
 var _displayed_visemes := PackedFloat32Array()
 var _head_reference_position := Vector3.ZERO
+var _spine_ik: SkeletonIK3D
+var _spine_target_basis := Basis.IDENTITY
 var _arm_ik: Dictionary = {}
 var _arm_tip_bones: Dictionary = {}
 var _arm_root_bones: Dictionary = {}
@@ -139,7 +143,33 @@ func _find_head_bone(root: Node) -> void:
 		if _chest_bone >= 0:
 			_chest_rest_rotation = _skeleton.get_bone_pose_rotation(_chest_bone)
 			break
+	_configure_spine_ik()
 	_configure_arm_ik()
+
+
+func _configure_spine_ik() -> void:
+	_spine_ik = null
+	if _skeleton == null or _head_bone < 0:
+		return
+	var root_bone := -1
+	for bone_name: StringName in [&"Spine", &"spine", &"Chest", &"chest"]:
+		root_bone = _skeleton.find_bone(bone_name)
+		if root_bone >= 0:
+			break
+	if root_bone < 0:
+		return
+	_spine_ik = SkeletonIK3D.new()
+	_spine_ik.name = "SeatedSpineIK"
+	_spine_ik.root_bone = _skeleton.get_bone_name(root_bone)
+	_spine_ik.tip_bone = _skeleton.get_bone_name(_head_bone)
+	_spine_ik.override_tip_basis = true
+	_spine_ik.use_magnet = true
+	_spine_ik.max_iterations = 16
+	_spine_ik.min_distance = 0.001
+	_spine_target_basis = _skeleton.get_bone_global_pose(_head_bone).basis
+	_spine_ik.target = Transform3D(_spine_target_basis, _head_reference_position)
+	_spine_ik.magnet = _head_reference_position + Vector3(0.0, -0.30, -0.45)
+	_skeleton.add_child(_spine_ik)
 
 
 func _configure_arm_ik() -> void:
@@ -225,7 +255,7 @@ func _apply_hand_controls(side: String, hand_value: Dictionary) -> void:
 
 
 func _update_chest_follow(delta: float) -> void:
-	if _skeleton == null or _chest_bone < 0:
+	if _skeleton == null or _chest_bone < 0 or _spine_ik != null:
 		return
 	var alpha := 1.0 - exp(-delta / maxf(chest_follow_time_sec, 0.001))
 	_chest_displayed_delta = _chest_displayed_delta.slerp(_chest_target_delta, alpha)
@@ -528,13 +558,28 @@ func set_pose(frame: Variant) -> void:
 			))
 			has_head_rotation = true
 	if has_head_rotation and _skeleton != null and _head_bone >= 0:
-		_skeleton.set_bone_pose_rotation(_head_bone, _head_rest_rotation * head_rotation)
+		if _spine_ik == null:
+			_skeleton.set_bone_pose_rotation(_head_bone, _head_rest_rotation * head_rotation)
+		else:
+			_spine_ik.target.basis = (_spine_target_basis * Basis(head_rotation)).orthonormalized()
 		var head_euler := head_rotation.get_euler()
 		_chest_target_delta = Quaternion.from_euler(Vector3(
 			head_euler.x * chest_follow_strength * 0.65,
 			head_euler.y * chest_follow_strength,
-			head_euler.z * chest_follow_strength * 0.8,
+			 head_euler.z * chest_follow_strength * 0.8,
 		))
+	var head_position_value: Variant = frame.landmarks.get("head_position", [])
+	if _spine_ik != null and head_position_value is Array and head_position_value.size() == 3:
+		var displacement := Vector3(
+			float(head_position_value[0]),
+			float(head_position_value[1]),
+			-float(head_position_value[2]),
+		) * head_translation_scale
+		displacement = displacement.limit_length(maximum_head_translation)
+		_spine_ik.target.origin = _head_reference_position + displacement
+		_spine_ik.magnet = _head_reference_position + displacement * 0.35 + Vector3(0.0, -0.30, -0.45)
+		if not _spine_ik.is_running():
+			_spine_ik.start()
 	if mirror_controller_assignment:
 		_apply_arm_pose(frame.landmarks, "right", "left")
 		_apply_arm_pose(frame.landmarks, "left", "right")
