@@ -1,5 +1,8 @@
 extends SceneTree
 
+const PoseFrameScript := preload("res://src/tracking/pose_frame.gd")
+const HumanArmSolverScript := preload("res://src/tracking/human_arm_solver.gd")
+
 
 func _init() -> void:
 	call_deferred("_run")
@@ -18,6 +21,9 @@ func _run() -> void:
 	var avatar: Node = main.avatar
 	assert(avatar.status.begins_with("avatar ready"), avatar.status)
 	assert(main.avatar_y != null)
+	assert(main.mouth_attack != null)
+	main.mouth_attack.value = 135.0
+	assert(is_equal_approx(avatar.mouth_attack_ms, 135.0))
 	assert(Engine.max_fps == 60)
 	assert(main.performance_status != null)
 	assert(main.tracking_selector.item_count == 4)
@@ -31,6 +37,19 @@ func _run() -> void:
 	assert(springs.size() == 3, "expected two ear springs and one hair spring")
 	assert(float(springs[0].stiffness_scale) > 1.1, "ear spring tuning was not applied: %s" % springs[0].stiffness_scale)
 	assert(float(springs[2].stiffness_scale) > 0.8, "hair spring tuning was not applied: %s" % springs[2].stiffness_scale)
+	assert(avatar._arm_ik.size() == 2, "expected standard IK chains for both arms")
+	var pose = PoseFrameScript.new(1)
+	pose.landmarks = {
+		"head_rotation_quaternion": [sin(0.1), 0.0, 0.0, cos(0.1)],
+		"left_hand": {"position": [-0.45, -0.38, -0.12]},
+	}
+	HumanArmSolverScript.new().enrich(pose)
+	avatar.set_pose(pose)
+	var head_delta: Quaternion = avatar._head_rest_rotation.inverse() * avatar._skeleton.get_bone_pose_rotation(avatar._head_bone)
+	assert(head_delta.get_euler().x < 0.0, "tracked nod pitch should be mirrored")
+	var left_ik: SkeletonIK3D = avatar._arm_ik.left
+	assert(left_ik.target.origin.x < avatar._head_reference_position.x)
+	assert(left_ik.use_magnet)
 	var environment: WorldEnvironment = main.get_node("Margin/Rows/Columns/Preview/PreviewLayout/ViewportContainer/Viewport/Studio/Environment")
 	assert(environment.environment.ambient_light_energy <= 0.25, "studio ambient light is still over-bright")
 	print("Main scene ready | %s | %s" % [stream.status, avatar.status])

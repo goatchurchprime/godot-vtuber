@@ -13,6 +13,7 @@ const VisemeFrameScript := preload("res://src/visemes/viseme_frame.gd")
 const MediaPipeUdpAdapterScript := preload("res://src/tracking/mediapipe_udp_adapter.gd")
 const SyntheticTrackingAdapterScript := preload("res://src/tracking/synthetic_tracking_adapter.gd")
 const OpenXRTrackingAdapterScript := preload("res://src/tracking/openxr_tracking_adapter.gd")
+const HumanArmSolverScript := preload("res://src/tracking/human_arm_solver.gd")
 const GATE_HYSTERESIS_DB := 6.0
 const GATE_RELEASE_CHUNKS := 6
 const DIAGNOSTIC_INTERVAL_SEC := 0.25
@@ -30,6 +31,7 @@ const DIAGNOSTIC_INTERVAL_SEC := 0.25
 @onready var monitor: CheckButton = %Monitor
 @onready var delay: SpinBox = %Delay
 @onready var gate_db: SpinBox = %GateDb
+@onready var mouth_attack: SpinBox = %MouthAttack
 @onready var backend_selector: OptionButton = %Backend
 @onready var tracking_selector: OptionButton = %TrackingBackend
 @onready var input_device: OptionButton = %InputDevice
@@ -67,6 +69,7 @@ var camera_feedback_texture: ImageTexture
 var analysis_resampler_needs_reset := true
 var _diagnostic_elapsed := 0.0
 var xr_submission_viewport: SubViewport
+var human_arm_solver := HumanArmSolverScript.new()
 
 
 func _ready() -> void:
@@ -81,6 +84,8 @@ func _ready() -> void:
 	microphone.toggled.connect(_set_microphone_enabled)
 	monitor.toggled.connect(_set_monitor_enabled)
 	delay.value_changed.connect(_restart_playout.bind())
+	mouth_attack.value_changed.connect(_set_mouth_attack)
+	_set_mouth_attack(mouth_attack.value)
 	input_device.item_selected.connect(_select_input_device)
 	output_device.item_selected.connect(_select_output_device)
 	avatar_y.value_changed.connect(_set_avatar_height)
@@ -238,8 +243,13 @@ func _set_avatar_height(height: float) -> void:
 	avatar_anchor.position.y = height
 
 
+func _set_mouth_attack(duration_ms: float) -> void:
+	avatar.mouth_attack_ms = duration_ms
+
+
 func _on_pose_received(frame: Variant) -> void:
 	latest_pose_timestamp_usec = frame.timestamp_usec
+	human_arm_solver.enrich(frame)
 	avatar.set_pose(frame)
 
 

@@ -99,6 +99,7 @@ func _append_hand(frame: Variant, key: String, hand: int) -> void:
 				break
 	if not valid:
 		return
+	hand_transform = _origin_head.affine_inverse() * hand_transform
 	frame.landmarks[key] = _transform_dictionary(hand_transform)
 	frame.confidence[key] = 1.0
 	_tracked_hands += 1

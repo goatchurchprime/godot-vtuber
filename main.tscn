@@ -172,6 +172,23 @@ max_value = -15.0
 value = -42.0
 suffix = " dBFS"
 
+[node name="AttackRow" type="HBoxContainer" parent="Margin/Rows/Columns/Diagnostics/Margin/Rows"]
+layout_mode = 2
+
+[node name="Label" type="Label" parent="Margin/Rows/Columns/Diagnostics/Margin/Rows/AttackRow"]
+layout_mode = 2
+text = "Mouth attack"
+
+[node name="MouthAttack" type="SpinBox" parent="Margin/Rows/Columns/Diagnostics/Margin/Rows/AttackRow"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+tooltip_text = "Time for mouth shapes to open; larger values soften sudden attacks"
+max_value = 500.0
+step = 5.0
+value = 80.0
+suffix = " ms"
+
 [node name="BackendRow" type="HBoxContainer" parent="Margin/Rows/Columns/Diagnostics/Margin/Rows" unique_id=1874100732]
 layout_mode = 2
 

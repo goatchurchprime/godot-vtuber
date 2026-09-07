@@ -39,6 +39,27 @@ Godot shows the newest complete image beside the avatar. This deliberately
 avoids a second webcam consumer and keeps preview loss from back-pressuring the
 latest-state pose channel.
 
+## XR body retargeting
+
+OpenXR observations do not drive avatar bones directly. Controller and hand
+positions are first expressed relative to the initial HMD pose. A canonical
+human layer then reconstructs shoulders, elbows, wrists, and eventually all
+finger joints using consistent human segment lengths. Only that solved human
+pose crosses into the avatar driver.
+
+The first arm milestone uses Godot 4.6 `SkeletonIK3D`: each wrist is the IK
+target and the corresponding reconstructed human elbow is its magnet/pole.
+The IK solver therefore adapts the canonical pose to each avatar's own upper
+arm and forearm lengths. This deliberately establishes the same two-stage
+boundary needed for hands and for future neck/body compensation; raw OpenXR
+joint bases are observations, not assumed avatar bone transforms.
+
+Godot-XR-AH is the reference experiment for fitting a positionally correct
+human hand. Its scene and controller coupling are not application policy and
+are not imported into this repository. A later replaceable hand adapter can
+reuse its position-fitting mathematics while emitting the same canonical pose
+contract.
+
 ## Dependency direction
 
 The application depends on interfaces implemented by adapters. TwoVoIP,

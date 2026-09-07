@@ -32,6 +32,8 @@ const VISEME_SHAPE_ALIASES := [
 @export_file("*.vrm", "*.tscn", "*.scn", "*.glb", "*.gltf") var avatar_path := "res://avatars/freakhound_avatar.tscn"
 @export_range(0.0, 4.0, 0.05, "or_greater") var spring_stiffness_multiplier := 1.5
 @export_range(0.0, 3.0, 0.05, "or_greater") var spring_drag_multiplier := 1.25
+@export_range(0.0, 500.0, 5.0, "or_greater") var mouth_attack_ms := 80.0
+@export_range(0.0, 500.0, 5.0, "or_greater") var mouth_release_ms := 45.0
 
 var status := "no avatar"
 var _meshes: Array[MeshInstance3D] = []
@@ -40,10 +42,34 @@ var _avatar_root: Node3D
 var _skeleton: Skeleton3D
 var _head_bone := -1
 var _head_rest_rotation := Quaternion.IDENTITY
+var _target_visemes := PackedFloat32Array()
+var _displayed_visemes := PackedFloat32Array()
+var _head_reference_position := Vector3.ZERO
+var _arm_ik: Dictionary = {}
 
 
 func _ready() -> void:
 	load_avatar(avatar_path)
+	set_process(true)
+
+
+func _process(delta: float) -> void:
+	if _target_visemes.is_empty():
+		return
+	if _displayed_visemes.size() != _target_visemes.size():
+		_displayed_visemes = _target_visemes.duplicate()
+	var changed := false
+	for index in _target_visemes.size():
+		var target := _target_visemes[index]
+		var current := _displayed_visemes[index]
+		var time_ms := mouth_attack_ms if target > current else mouth_release_ms
+		var alpha := 1.0 if time_ms <= 0.0 else 1.0 - exp(-delta * 1000.0 / time_ms)
+		var next := lerpf(current, target, alpha)
+		if not is_equal_approx(next, current):
+			changed = true
+		_displayed_visemes[index] = next
+	if changed:
+		_apply_viseme_weights(_displayed_visemes)
 
 
 func load_avatar(path: String) -> bool:
@@ -79,6 +105,31 @@ func _find_head_bone(root: Node) -> void:
 			break
 	if _head_bone >= 0:
 		_head_rest_rotation = _skeleton.get_bone_pose_rotation(_head_bone)
+		_head_reference_position = _skeleton.get_bone_global_pose(_head_bone).origin
+	_configure_arm_ik()
+
+
+func _configure_arm_ik() -> void:
+	_arm_ik.clear()
+	if _skeleton == null:
+		return
+	for side: String in ["left", "right"]:
+		var title := side.capitalize()
+		var root_name := StringName("%sUpperArm" % title)
+		var tip_name := StringName("%sHand" % title)
+		if _skeleton.find_bone(root_name) < 0 or _skeleton.find_bone(tip_name) < 0:
+			continue
+		var ik := SkeletonIK3D.new()
+		ik.name = "%sArmIK" % title
+		ik.root_bone = root_name
+		ik.tip_bone = tip_name
+		ik.override_tip_basis = false
+		ik.use_magnet = true
+		ik.max_iterations = 12
+		ik.min_distance = 0.002
+		_skeleton.add_child(ik)
+		ik.start()
+		_arm_ik[side] = ik
 
 
 func _find_skeleton(node: Node) -> Skeleton3D:
@@ -181,6 +232,13 @@ func _find_first_shape(mesh: MeshInstance3D, aliases: Array) -> int:
 
 
 func set_visemes(weights: PackedFloat32Array) -> void:
+	_target_visemes = weights.duplicate()
+	if _displayed_visemes.size() != weights.size():
+		_displayed_visemes = weights.duplicate()
+		_apply_viseme_weights(_displayed_visemes)
+
+
+func _apply_viseme_weights(weights: PackedFloat32Array) -> void:
 	for mesh_index in _meshes.size():
 		var mesh := _meshes[mesh_index]
 		var indices := _shape_indices[mesh_index]
@@ -197,22 +255,52 @@ func set_pose(frame: Variant) -> void:
 	var has_head_rotation := false
 	var quaternion_value: Variant = frame.landmarks.get("head_rotation_quaternion", [])
 	if quaternion_value is Array and quaternion_value.size() == 4:
-		head_rotation = Quaternion(
+		var tracked_rotation := Quaternion(
 			float(quaternion_value[0]), float(quaternion_value[1]),
 			float(quaternion_value[2]), float(quaternion_value[3])
 		).normalized()
+		var tracked_euler := tracked_rotation.get_euler()
+		tracked_euler.x = -tracked_euler.x
+		head_rotation = Quaternion.from_euler(tracked_euler)
 		has_head_rotation = true
 	else:
 		var rotation_value: Variant = frame.landmarks.get("head_rotation_degrees", [])
 		if rotation_value is Array and rotation_value.size() == 3:
 			head_rotation = Quaternion.from_euler(Vector3(
-				deg_to_rad(float(rotation_value[0])),
+				-deg_to_rad(float(rotation_value[0])),
 				deg_to_rad(float(rotation_value[1])),
 				deg_to_rad(float(rotation_value[2])),
 			))
 			has_head_rotation = true
 	if has_head_rotation and _skeleton != null and _head_bone >= 0:
 		_skeleton.set_bone_pose_rotation(_head_bone, _head_rest_rotation * head_rotation)
+	_apply_arm_pose(frame.landmarks, "left")
+	_apply_arm_pose(frame.landmarks, "right")
 	var shoulder_value: Variant = frame.landmarks.get("shoulder_center", [])
 	if shoulder_value is Array and shoulder_value.size() >= 1:
 		_avatar_root.position.x = clampf(float(shoulder_value[0]), -0.25, 0.25)
+
+
+func _apply_arm_pose(landmarks: Dictionary, side: String) -> void:
+	var ik := _arm_ik.get(side) as SkeletonIK3D
+	if ik == null:
+		return
+	var hand_value: Variant = landmarks.get("%s_hand" % side, {})
+	var elbow_value: Variant = landmarks.get("%s_elbow" % side, [])
+	if not hand_value is Dictionary or not elbow_value is Array or elbow_value.size() != 3:
+		return
+	var position_value: Variant = hand_value.get("position", [])
+	if not position_value is Array or position_value.size() != 3:
+		return
+	var hand_position := _map_human_position(position_value)
+	var elbow_position := _map_human_position(elbow_value)
+	ik.target = Transform3D(Basis.IDENTITY, hand_position)
+	ik.magnet = elbow_position
+
+
+func _map_human_position(value: Array) -> Vector3:
+	# Mirror the XR user's depth into the front-facing broadcast avatar while
+	# retaining screen-left/right and vertical motion.
+	return _head_reference_position + Vector3(
+		float(value[0]), float(value[1]), -float(value[2])
+	)
