@@ -34,6 +34,7 @@ const VISEME_SHAPE_ALIASES := [
 @export_range(0.0, 3.0, 0.05, "or_greater") var spring_drag_multiplier := 1.25
 @export_range(0.0, 500.0, 5.0, "or_greater") var mouth_attack_ms := 80.0
 @export_range(0.0, 500.0, 5.0, "or_greater") var mouth_release_ms := 45.0
+@export_range(-0.5, 0.5, 0.01) var hand_height_offset := 0.12
 
 var status := "no avatar"
 var _meshes: Array[MeshInstance3D] = []
@@ -46,6 +47,9 @@ var _target_visemes := PackedFloat32Array()
 var _displayed_visemes := PackedFloat32Array()
 var _head_reference_position := Vector3.ZERO
 var _arm_ik: Dictionary = {}
+var _arm_tip_bones: Dictionary = {}
+var _arm_tip_rest_basis: Dictionary = {}
+var _arm_controller_reference: Dictionary = {}
 
 
 func _ready() -> void:
@@ -111,6 +115,9 @@ func _find_head_bone(root: Node) -> void:
 
 func _configure_arm_ik() -> void:
 	_arm_ik.clear()
+	_arm_tip_bones.clear()
+	_arm_tip_rest_basis.clear()
+	_arm_controller_reference.clear()
 	if _skeleton == null:
 		return
 	for side: String in ["left", "right"]:
@@ -123,12 +130,15 @@ func _configure_arm_ik() -> void:
 		ik.name = "%sArmIK" % title
 		ik.root_bone = root_name
 		ik.tip_bone = tip_name
-		ik.override_tip_basis = false
+		ik.override_tip_basis = true
 		ik.use_magnet = true
 		ik.max_iterations = 12
 		ik.min_distance = 0.002
 		_skeleton.add_child(ik)
 		_arm_ik[side] = ik
+		var tip_bone := _skeleton.find_bone(tip_name)
+		_arm_tip_bones[side] = tip_bone
+		_arm_tip_rest_basis[side] = _skeleton.get_bone_global_pose(tip_bone).basis
 
 
 func _find_skeleton(node: Node) -> Skeleton3D:
@@ -293,15 +303,29 @@ func _apply_arm_pose(landmarks: Dictionary, side: String) -> void:
 		return
 	var hand_position := _map_human_position(position_value)
 	var elbow_position := _map_human_position(elbow_value)
-	ik.target = Transform3D(Basis.IDENTITY, hand_position)
+	var target_basis: Basis = _arm_tip_rest_basis.get(side, Basis.IDENTITY)
+	var rotation_value: Variant = hand_value.get("rotation_quaternion", [])
+	if rotation_value is Array and rotation_value.size() == 4:
+		var tracked_basis := Basis(Quaternion(
+			float(rotation_value[0]), float(rotation_value[1]),
+			float(rotation_value[2]), float(rotation_value[3])
+		).normalized())
+		var broadcast_turn := Basis(Vector3.UP, PI)
+		var controller_basis := broadcast_turn * tracked_basis * broadcast_turn.inverse()
+		if not _arm_controller_reference.has(side):
+			_arm_controller_reference[side] = controller_basis
+		var controller_reference: Basis = _arm_controller_reference[side]
+		var controller_delta := controller_basis * controller_reference.inverse()
+		target_basis = controller_delta * target_basis
+	ik.target = Transform3D(target_basis.orthonormalized(), hand_position)
 	ik.magnet = elbow_position
 	if not ik.is_running():
 		ik.start()
 
 
 func _map_human_position(value: Array) -> Vector3:
-	# Mirror the XR user's depth into the front-facing broadcast avatar while
-	# retaining screen-left/right and vertical motion.
+	# A 180-degree broadcast turn preserves anatomical handedness: the user's
+	# left controller drives the avatar's left arm, which appears screen-right.
 	return _head_reference_position + Vector3(
-		float(value[0]), float(value[1]), -float(value[2])
+		-float(value[0]), float(value[1]) + hand_height_offset, -float(value[2])
 	)

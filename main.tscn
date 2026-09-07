@@ -249,6 +249,7 @@ layout_mode = 2
 text = "Webcam pose: unavailable"
 editable = false
 selecting_enabled = true
+flat = true
 tooltip_text = "Read-only tracking diagnostics; click, then press Ctrl+A and Ctrl+C to copy"
 
 [node name="Clock" type="Label" parent="Margin/Rows/Columns/Diagnostics/Margin/Rows" unique_id=510732433]

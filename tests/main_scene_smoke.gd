@@ -47,7 +47,10 @@ func _run() -> void:
 	var pose = PoseFrameScript.new(1)
 	pose.landmarks = {
 		"head_rotation_quaternion": [sin(0.1), 0.0, 0.0, cos(0.1)],
-		"left_hand": {"position": [-0.45, -0.38, -0.12]},
+		"left_hand": {
+			"position": [-0.45, -0.38, -0.12],
+			"rotation_quaternion": [0.0, 0.0, 0.0, 1.0],
+		},
 	}
 	HumanArmSolverScript.new().enrich(pose)
 	avatar.set_pose(pose)
@@ -55,8 +58,13 @@ func _run() -> void:
 	assert(head_delta.get_euler().x < 0.0, "tracked nod pitch should be mirrored")
 	assert(left_ik.is_running(), "left IK should start after its first valid target")
 	assert(not right_ik.is_running(), "untracked right IK should remain stopped")
-	assert(left_ik.target.origin.x < avatar._head_reference_position.x)
+	assert(left_ik.target.origin.x > avatar._head_reference_position.x)
 	assert(left_ik.use_magnet)
+	assert(left_ik.override_tip_basis)
+	var neutral_hand_basis := left_ik.target.basis
+	pose.landmarks.left_hand.rotation_quaternion = [0.0, 0.0, sin(0.2), cos(0.2)]
+	avatar.set_pose(pose)
+	assert(not left_ik.target.basis.is_equal_approx(neutral_hand_basis), "controller rotation should rotate the avatar wrist")
 	var environment: WorldEnvironment = main.get_node("Margin/Rows/Columns/Preview/PreviewLayout/ViewportContainer/Viewport/Studio/Environment")
 	assert(environment.environment.ambient_light_energy <= 0.25, "studio ambient light is still over-bright")
 	print("Main scene ready | %s | %s" % [stream.status, avatar.status])
