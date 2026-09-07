@@ -243,11 +243,13 @@ layout_mode = 2
 text = "Avatar: unavailable"
 autowrap_mode = 1
 
-[node name="Pose" type="Label" parent="Margin/Rows/Columns/Diagnostics/Margin/Rows" unique_id=1005780654]
+[node name="Pose" type="LineEdit" parent="Margin/Rows/Columns/Diagnostics/Margin/Rows" unique_id=1005780654]
 unique_name_in_owner = true
 layout_mode = 2
 text = "Webcam pose: unavailable"
-autowrap_mode = 1
+editable = false
+selecting_enabled = true
+tooltip_text = "Read-only tracking diagnostics; click, then press Ctrl+A and Ctrl+C to copy"
 
 [node name="Clock" type="Label" parent="Margin/Rows/Columns/Diagnostics/Margin/Rows" unique_id=510732433]
 unique_name_in_owner = true

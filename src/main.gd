@@ -22,7 +22,7 @@ const DIAGNOSTIC_INTERVAL_SEC := 0.25
 
 @onready var audio_status: Label = %Audio
 @onready var viseme_status: Label = %Visemes
-@onready var pose_status: Label = %Pose
+@onready var pose_status: LineEdit = %Pose
 @onready var avatar_status: Label = %AvatarStatus
 @onready var clock_status: Label = %Clock
 @onready var buffer_status: Label = %Buffer

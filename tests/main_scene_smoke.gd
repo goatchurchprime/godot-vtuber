@@ -28,6 +28,7 @@ func _run() -> void:
 	assert(Engine.max_fps == 60)
 	assert(main.performance_status != null)
 	assert(main.tracking_selector.item_count == 4)
+	assert(main.pose_status is LineEdit and not main.pose_status.editable)
 	assert(main.tracking_selector.selected == 0)
 	assert(main.xr_submission_viewport == null)
 	main.avatar_y.value = 0.25
