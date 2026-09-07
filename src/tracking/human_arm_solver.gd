@@ -47,7 +47,7 @@ func solve_elbow(shoulder: Vector3, wrist: Vector3, sign_x: float) -> Vector3:
 	var height := sqrt(maxf(0.0, upper_arm_length * upper_arm_length - along * along))
 	# Elbows prefer outwards and slightly behind the palms. Projecting this
 	# reference off the shoulder/wrist line gives the deterministic pole plane.
-	var pole_reference := Vector3(sign_x, -0.35, 0.45).normalized()
+	var pole_reference := Vector3(sign_x * 0.45, -1.0, 0.25).normalized()
 	var pole := (pole_reference - forward * pole_reference.dot(forward)).normalized()
 	if pole.is_zero_approx():
 		pole = Vector3(sign_x, 0.0, 0.0)

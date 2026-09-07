@@ -94,7 +94,13 @@ func _append_hand(frame: Variant, key: String, hand: int) -> void:
 		if hand_transform == null:
 			continue
 		hand_transform = _origin_head.affine_inverse() * (hand_transform as Transform3D)
-		frame.landmarks[key] = _transform_dictionary(hand_transform)
+		var hand_data := _transform_dictionary(hand_transform)
+		if tracker.has_method("get_input"):
+			for action_name: StringName in [&"trigger", &"grip"]:
+				var input_value: Variant = tracker.call("get_input", action_name)
+				if input_value is float or input_value is int:
+					hand_data[String(action_name)] = clampf(float(input_value), 0.0, 1.0)
+		frame.landmarks[key] = hand_data
 		frame.confidence[key] = 1.0
 		_tracked_hands += 1
 		return

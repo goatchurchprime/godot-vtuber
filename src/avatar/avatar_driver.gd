@@ -37,7 +37,9 @@ const VISEME_SHAPE_ALIASES := [
 @export_range(-0.5, 0.5, 0.01) var hand_height_offset := 0.12
 @export var mirror_controller_assignment := true
 @export var show_ik_debug := true
-@export_range(0.05, 1.0, 0.01) var elbow_pole_distance := 0.35
+@export_range(0.05, 1.0, 0.01) var elbow_pole_distance := 0.20
+@export_range(0.0, 1.0, 0.01) var chest_follow_strength := 0.14
+@export_range(0.05, 1.0, 0.01) var chest_follow_time_sec := 0.22
 
 var status := "no avatar"
 var _meshes: Array[MeshInstance3D] = []
@@ -46,6 +48,10 @@ var _avatar_root: Node3D
 var _skeleton: Skeleton3D
 var _head_bone := -1
 var _head_rest_rotation := Quaternion.IDENTITY
+var _chest_bone := -1
+var _chest_rest_rotation := Quaternion.IDENTITY
+var _chest_target_delta := Quaternion.IDENTITY
+var _chest_displayed_delta := Quaternion.IDENTITY
 var _target_visemes := PackedFloat32Array()
 var _displayed_visemes := PackedFloat32Array()
 var _head_reference_position := Vector3.ZERO
@@ -65,6 +71,7 @@ var _arm_debug_achieved_ray: Dictionary = {}
 var _arm_debug_target_palm: Dictionary = {}
 var _arm_debug_achieved_palm: Dictionary = {}
 var _arm_debug_attachment: Dictionary = {}
+var _finger_controls: Dictionary = {}
 
 
 func _ready() -> void:
@@ -73,6 +80,7 @@ func _ready() -> void:
 
 
 func _process(delta: float) -> void:
+	_update_chest_follow(delta)
 	if _target_visemes.is_empty():
 		return
 	if _displayed_visemes.size() != _target_visemes.size():
@@ -125,6 +133,11 @@ func _find_head_bone(root: Node) -> void:
 	if _head_bone >= 0:
 		_head_rest_rotation = _skeleton.get_bone_pose_rotation(_head_bone)
 		_head_reference_position = _skeleton.get_bone_global_pose(_head_bone).origin
+	for bone_name: StringName in [&"Chest", &"chest", &"UpperChest", &"upperChest"]:
+		_chest_bone = _skeleton.find_bone(bone_name)
+		if _chest_bone >= 0:
+			_chest_rest_rotation = _skeleton.get_bone_pose_rotation(_chest_bone)
+			break
 	_configure_arm_ik()
 
 
@@ -145,6 +158,7 @@ func _configure_arm_ik() -> void:
 	_arm_debug_target_palm.clear()
 	_arm_debug_achieved_palm.clear()
 	_arm_debug_attachment.clear()
+	_finger_controls.clear()
 	if _skeleton == null:
 		return
 	for side: String in ["left", "right"]:
@@ -171,6 +185,50 @@ func _configure_arm_ik() -> void:
 		_arm_palm_normal_axes[side] = _find_palm_normal_axis(tip_bone, _arm_hand_axes[side])
 		_arm_neutral_target_basis[side] = _arm_tip_rest_basis[side]
 		_create_arm_debug(side)
+		_configure_finger_controls(side, tip_bone)
+
+
+func _configure_finger_controls(side: String, hand_bone: int) -> void:
+	var controls: Array[Dictionary] = []
+	var hand_pose := _skeleton.get_bone_global_pose(hand_bone)
+	var finger_forward := hand_pose.basis * (_arm_hand_axes[side] as Vector3)
+	var palm_normal := hand_pose.basis * (_arm_palm_normal_axes[side] as Vector3)
+	var global_flex_axis := finger_forward.cross(-palm_normal).normalized()
+	for bone_index in _skeleton.get_bone_count():
+		var name := String(_skeleton.get_bone_name(bone_index)).to_lower()
+		if not ("proximal" in name or "intermediate" in name or "distal" in name):
+			continue
+		if not name.begins_with(side):
+			continue
+		if "thumb" in name:
+			continue
+		var amount := 1.13 if "proximal" in name else (1.30 if "intermediate" in name else 0.87)
+		controls.append({
+			"bone": bone_index,
+			"rest": _skeleton.get_bone_pose_rotation(bone_index),
+			"axis": (_skeleton.get_bone_global_pose(bone_index).basis.inverse() * global_flex_axis).normalized(),
+			"amount": amount,
+			"trigger": "index" in name,
+		})
+	_finger_controls[side] = controls
+
+
+func _apply_hand_controls(side: String, hand_value: Dictionary) -> void:
+	var grip := clampf(float(hand_value.get("grip", 0.0)), 0.0, 1.0)
+	var trigger := clampf(float(hand_value.get("trigger", 0.0)), 0.0, 1.0)
+	for control: Dictionary in _finger_controls.get(side, []):
+		var weight := trigger if bool(control.trigger) else grip
+		var rotation := control.rest as Quaternion
+		rotation *= Quaternion(control.axis as Vector3, float(control.amount) * weight)
+		_skeleton.set_bone_pose_rotation(int(control.bone), rotation)
+
+
+func _update_chest_follow(delta: float) -> void:
+	if _skeleton == null or _chest_bone < 0:
+		return
+	var alpha := 1.0 - exp(-delta / maxf(chest_follow_time_sec, 0.001))
+	_chest_displayed_delta = _chest_displayed_delta.slerp(_chest_target_delta, alpha)
+	_skeleton.set_bone_pose_rotation(_chest_bone, _chest_rest_rotation * _chest_displayed_delta)
 
 
 func _create_arm_debug(side: String) -> void:
@@ -470,6 +528,12 @@ func set_pose(frame: Variant) -> void:
 			has_head_rotation = true
 	if has_head_rotation and _skeleton != null and _head_bone >= 0:
 		_skeleton.set_bone_pose_rotation(_head_bone, _head_rest_rotation * head_rotation)
+		var head_euler := head_rotation.get_euler()
+		_chest_target_delta = Quaternion.from_euler(Vector3(
+			head_euler.x * chest_follow_strength * 0.65,
+			head_euler.y * chest_follow_strength,
+			head_euler.z * chest_follow_strength * 0.8,
+		))
 	if mirror_controller_assignment:
 		_apply_arm_pose(frame.landmarks, "right", "left")
 		_apply_arm_pose(frame.landmarks, "left", "right")
@@ -492,6 +556,7 @@ func _apply_arm_pose(landmarks: Dictionary, target_side: String, source_side: St
 	var position_value: Variant = hand_value.get("position", [])
 	if not position_value is Array or position_value.size() != 3:
 		return
+	_apply_hand_controls(target_side, hand_value)
 	var hand_position := _map_human_position(position_value)
 	var elbow_position := _map_human_position(elbow_value)
 	var root_bone := int(_arm_root_bones.get(target_side, -1))

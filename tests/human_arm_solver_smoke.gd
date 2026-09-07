@@ -11,5 +11,6 @@ func _init() -> void:
 	assert(absf(shoulder.distance_to(elbow) - solver.upper_arm_length) < 0.001)
 	assert(absf(elbow.distance_to(wrist) - solver.forearm_length) < 0.001)
 	assert(elbow.x < shoulder.x, "left elbow pole should point outwards")
+	assert(elbow.y < shoulder.y, "canonical elbow should prefer below its shoulder")
 	print("HUMAN_ARM_SOLVER_OK elbow=", elbow)
 	quit()
