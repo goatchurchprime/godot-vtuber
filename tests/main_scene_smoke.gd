@@ -77,6 +77,10 @@ func _run() -> void:
 	pose.landmarks.left_hand.rotation_quaternion = [0.0, 0.0, sin(0.2), cos(0.2)]
 	avatar.set_pose(pose)
 	assert(not right_ik.target.basis.is_equal_approx(neutral_hand_basis), "controller rotation should rotate the avatar wrist")
+	await process_frame
+	await process_frame
+	var achieved_attachment := avatar._arm_debug_attachment.right as BoneAttachment3D
+	assert(achieved_attachment.transform.origin.distance_to(right_ik.target.origin) < 0.25, "final hand attachment should follow the solved wrist")
 	var environment: WorldEnvironment = main.get_node("Margin/Rows/Columns/Preview/PreviewLayout/ViewportContainer/Viewport/Studio/Environment")
 	assert(environment.environment.ambient_light_energy <= 0.25, "studio ambient light is still over-bright")
 	print("Main scene ready | %s | %s" % [stream.status, avatar.status])
