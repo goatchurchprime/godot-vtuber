@@ -38,6 +38,10 @@ func _run() -> void:
 	assert(float(springs[0].stiffness_scale) > 1.1, "ear spring tuning was not applied: %s" % springs[0].stiffness_scale)
 	assert(float(springs[2].stiffness_scale) > 0.8, "hair spring tuning was not applied: %s" % springs[2].stiffness_scale)
 	assert(avatar._arm_ik.size() == 2, "expected standard IK chains for both arms")
+	var left_ik: SkeletonIK3D = avatar._arm_ik.left
+	var right_ik: SkeletonIK3D = avatar._arm_ik.right
+	assert(not left_ik.is_running(), "left IK must wait for a valid wrist target")
+	assert(not right_ik.is_running(), "right IK must wait for a valid wrist target")
 	var pose = PoseFrameScript.new(1)
 	pose.landmarks = {
 		"head_rotation_quaternion": [sin(0.1), 0.0, 0.0, cos(0.1)],
@@ -47,7 +51,8 @@ func _run() -> void:
 	avatar.set_pose(pose)
 	var head_delta: Quaternion = avatar._head_rest_rotation.inverse() * avatar._skeleton.get_bone_pose_rotation(avatar._head_bone)
 	assert(head_delta.get_euler().x < 0.0, "tracked nod pitch should be mirrored")
-	var left_ik: SkeletonIK3D = avatar._arm_ik.left
+	assert(left_ik.is_running(), "left IK should start after its first valid target")
+	assert(not right_ik.is_running(), "untracked right IK should remain stopped")
 	assert(left_ik.target.origin.x < avatar._head_reference_position.x)
 	assert(left_ik.use_magnet)
 	var environment: WorldEnvironment = main.get_node("Margin/Rows/Columns/Preview/PreviewLayout/ViewportContainer/Viewport/Studio/Environment")

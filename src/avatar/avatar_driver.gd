@@ -128,7 +128,6 @@ func _configure_arm_ik() -> void:
 		ik.max_iterations = 12
 		ik.min_distance = 0.002
 		_skeleton.add_child(ik)
-		ik.start()
 		_arm_ik[side] = ik
 
 
@@ -296,6 +295,8 @@ func _apply_arm_pose(landmarks: Dictionary, side: String) -> void:
 	var elbow_position := _map_human_position(elbow_value)
 	ik.target = Transform3D(Basis.IDENTITY, hand_position)
 	ik.magnet = elbow_position
+	if not ik.is_running():
+		ik.start()
 
 
 func _map_human_position(value: Array) -> Vector3:

@@ -20,6 +20,7 @@ var _sample_accumulator := 0.0
 var _origin_head := Transform3D.IDENTITY
 var _origin_captured := false
 var _tracked_hands := 0
+var _hand_tracker_candidates := 0
 
 
 func start() -> bool:
@@ -70,48 +71,65 @@ func _emit_current_pose() -> void:
 	}
 	frame.confidence = {"head": 1.0}
 	_tracked_hands = 0
+	_hand_tracker_candidates = 0
 	_append_hand(frame, "left_hand", HAND_LEFT)
 	_append_hand(frame, "right_hand", HAND_RIGHT)
 	received_frames += 1
-	status = "OpenXR tracking head + %d hand(s)" % _tracked_hands
+	status = "OpenXR tracking head + %d hand(s), %d candidate(s)" % [
+		_tracked_hands, _hand_tracker_candidates,
+	]
 	pose_received.emit(frame)
 
 
 func _append_hand(frame: Variant, key: String, hand: int) -> void:
-	var tracker: Variant = _find_hand_tracker(hand)
-	if tracker == null:
+	var trackers: Array = _find_hand_trackers(hand)
+	_hand_tracker_candidates += trackers.size()
+	for tracker: Variant in trackers:
+		var hand_transform: Variant = _read_hand_transform(tracker)
+		if hand_transform == null:
+			continue
+		hand_transform = _origin_head.affine_inverse() * (hand_transform as Transform3D)
+		frame.landmarks[key] = _transform_dictionary(hand_transform)
+		frame.confidence[key] = 1.0
+		_tracked_hands += 1
 		return
-	var hand_transform := Transform3D.IDENTITY
-	var valid := false
+
+
+func _read_hand_transform(tracker: Variant) -> Variant:
 	if tracker.is_class("XRHandTracker") and tracker.call("get_has_tracking_data"):
 		var flags: int = tracker.call("get_hand_joint_flags", WRIST_JOINT)
 		if flags & 5:
-			hand_transform = tracker.call("get_hand_joint_transform", WRIST_JOINT)
-			valid = true
+			return tracker.call("get_hand_joint_transform", WRIST_JOINT)
 	else:
 		for pose_name: StringName in [&"grip", &"default", &"aim"]:
 			if not tracker.call("has_pose", pose_name):
 				continue
 			var pose: Variant = tracker.call("get_pose", pose_name)
-			if pose != null and bool(pose.get("has_tracking_data")):
-				hand_transform = pose.get("transform")
-				valid = true
-				break
-	if not valid:
-		return
-	hand_transform = _origin_head.affine_inverse() * hand_transform
-	frame.landmarks[key] = _transform_dictionary(hand_transform)
-	frame.confidence[key] = 1.0
-	_tracked_hands += 1
+			if pose == null:
+				continue
+			var has_data := bool(pose.call("get_has_tracking_data")) \
+				if pose.has_method("get_has_tracking_data") else bool(pose.get("has_tracking_data"))
+			if has_data:
+				return pose.call("get_transform") \
+					if pose.has_method("get_transform") else pose.get("transform")
+	return null
 
 
-func _find_hand_tracker(hand: int) -> Variant:
+func _find_hand_trackers(hand: int) -> Array:
+	var result: Array = []
+	# Godot exposes action-based controller trackers under these stable names.
+	# Prefer them over XRHandTracker placeholders which may exist without live
+	# optical hand data and previously masked a working SteamVR controller.
+	var controller_name := &"left_hand" if hand == HAND_LEFT else &"right_hand"
+	var controller: Variant = XRServer.get_tracker(controller_name)
+	if controller != null:
+		result.append(controller)
 	var trackers: Dictionary = XRServer.get_trackers(TRACKER_CONTROLLER | TRACKER_HAND)
 	for tracker: Variant in trackers.values():
 		if tracker != null and tracker.has_method("get_tracker_hand"):
-			if int(tracker.call("get_tracker_hand")) == hand:
-				return tracker
-	return null
+			if int(tracker.call("get_tracker_hand")) == hand and not result.has(tracker):
+				result.append(tracker)
+	return result
 
 
 func _transform_dictionary(value: Transform3D) -> Dictionary:
