@@ -32,6 +32,7 @@ func _run() -> void:
 	assert(main.screenshot_button is Button)
 	assert(main.copy_status_button is Button)
 	assert(main.calibrate_hands_button is Button)
+	assert(main.latest_pose_frame == null)
 	assert(main.tracking_selector.selected == 0)
 	assert(main.xr_submission_viewport == null)
 	main.avatar_y.value = 0.25

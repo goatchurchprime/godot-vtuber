@@ -69,6 +69,7 @@ var quiet_chunks := 0
 var tracking_adapter: Variant
 var tracking_backend_started := false
 var latest_pose_timestamp_usec := 0
+var latest_pose_frame: Variant
 var latest_preview_timestamp_usec := 0
 var camera_feedback_texture: ImageTexture
 var analysis_resampler_needs_reset := true
@@ -135,11 +136,17 @@ func _unhandled_key_input(event: InputEvent) -> void:
 func _save_diagnostic_screenshot() -> void:
 	await RenderingServer.frame_post_draw
 	var image := get_viewport().get_texture().get_image()
-	var path := "user://vtuber-diagnostic.png"
+	var directory := "user://diagnostics"
+	DirAccess.make_dir_recursive_absolute(ProjectSettings.globalize_path(directory))
+	var stamp := Time.get_datetime_string_from_system(false, true).replace(":", "-")
+	var path := "%s/vtuber-%s-%03d.png" % [directory, stamp, Time.get_ticks_msec() % 1000]
 	var error := image.save_png(path)
 	if error == OK:
+		image.save_png("user://vtuber-diagnostic.png")
 		screenshot_button.text = "Saved"
 		print("VTUBER_SCREENSHOT ", ProjectSettings.globalize_path(path))
+		if latest_pose_frame != null:
+			print("VTUBER_POSE ", JSON.stringify(latest_pose_frame.landmarks))
 	else:
 		screenshot_button.text = "Save failed"
 		push_error("Could not save diagnostic screenshot: %s" % error_string(error))
@@ -287,6 +294,7 @@ func _set_mouth_attack(duration_ms: float) -> void:
 
 func _on_pose_received(frame: Variant) -> void:
 	latest_pose_timestamp_usec = frame.timestamp_usec
+	latest_pose_frame = frame
 	human_arm_solver.enrich(frame)
 	avatar.set_pose(frame)
 
