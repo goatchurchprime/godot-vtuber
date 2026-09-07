@@ -57,6 +57,9 @@ var _arm_controller_reference: Dictionary = {}
 var _arm_debug_hand: Dictionary = {}
 var _arm_debug_elbow: Dictionary = {}
 var _arm_debug_achieved: Dictionary = {}
+var _arm_hand_axes: Dictionary = {}
+var _arm_debug_target_ray: Dictionary = {}
+var _arm_debug_achieved_ray: Dictionary = {}
 
 
 func _ready() -> void:
@@ -131,6 +134,9 @@ func _configure_arm_ik() -> void:
 	_arm_debug_hand.clear()
 	_arm_debug_elbow.clear()
 	_arm_debug_achieved.clear()
+	_arm_hand_axes.clear()
+	_arm_debug_target_ray.clear()
+	_arm_debug_achieved_ray.clear()
 	if _skeleton == null:
 		return
 	for side: String in ["left", "right"]:
@@ -153,6 +159,7 @@ func _configure_arm_ik() -> void:
 		_arm_tip_bones[side] = tip_bone
 		_arm_root_bones[side] = _skeleton.find_bone(root_name)
 		_arm_tip_rest_basis[side] = _skeleton.get_bone_global_pose(tip_bone).basis
+		_arm_hand_axes[side] = _find_hand_forward_axis(tip_bone)
 		_create_arm_debug(side)
 
 
@@ -191,6 +198,59 @@ func _create_arm_debug(side: String) -> void:
 	achieved_box.visible = show_ik_debug
 	_skeleton.add_child(achieved_box)
 	_arm_debug_achieved[side] = achieved_box
+	var target_ray := _create_hand_ray(material)
+	_skeleton.add_child(target_ray)
+	_arm_debug_target_ray[side] = target_ray
+	var achieved_ray := _create_hand_ray(achieved_material)
+	_skeleton.add_child(achieved_ray)
+	_arm_debug_achieved_ray[side] = achieved_ray
+
+
+func _create_hand_ray(material: Material) -> Node3D:
+	var marker := Node3D.new()
+	marker.visible = show_ik_debug
+	var shaft := MeshInstance3D.new()
+	var shaft_mesh := BoxMesh.new()
+	shaft_mesh.size = Vector3(0.018, 0.018, 0.22)
+	shaft.mesh = shaft_mesh
+	shaft.material_override = material
+	shaft.position.z = -0.11
+	marker.add_child(shaft)
+	var tip := MeshInstance3D.new()
+	var tip_mesh := SphereMesh.new()
+	tip_mesh.radius = 0.03
+	tip_mesh.height = 0.06
+	tip.mesh = tip_mesh
+	tip.material_override = material
+	tip.position.z = -0.22
+	marker.add_child(tip)
+	return marker
+
+
+func _find_hand_forward_axis(hand_bone: int) -> Vector3:
+	var hand_pose := _skeleton.get_bone_global_pose(hand_bone)
+	for bone_index in _skeleton.get_bone_count():
+		var bone_name := String(_skeleton.get_bone_name(bone_index)).to_lower()
+		if "middleproximal" not in bone_name and "middle_proximal" not in bone_name:
+			continue
+		var ancestor := _skeleton.get_bone_parent(bone_index)
+		while ancestor >= 0 and ancestor != hand_bone:
+			ancestor = _skeleton.get_bone_parent(ancestor)
+		if ancestor == hand_bone:
+			var finger_direction := (
+				_skeleton.get_bone_global_pose(bone_index).origin - hand_pose.origin
+			).normalized()
+			return (hand_pose.basis.inverse() * finger_direction).normalized()
+	return Vector3(0.0, 0.0, -1.0)
+
+
+func _hand_ray_transform(hand_transform: Transform3D, side: String) -> Transform3D:
+	var local_axis: Vector3 = _arm_hand_axes.get(side, Vector3(0.0, 0.0, -1.0))
+	var up := Vector3.UP
+	if absf(local_axis.dot(up)) > 0.95:
+		up = Vector3.RIGHT
+	var axis_correction := Basis.looking_at(local_axis, up)
+	return hand_transform * Transform3D(axis_correction, Vector3.ZERO)
 
 
 func _update_achieved_hand_debug() -> void:
@@ -200,7 +260,11 @@ func _update_achieved_hand_debug() -> void:
 		var marker := _arm_debug_achieved[side] as MeshInstance3D
 		var tip_bone := int(_arm_tip_bones.get(side, -1))
 		if marker != null and tip_bone >= 0:
-			marker.transform = _skeleton.get_bone_global_pose(tip_bone)
+			var achieved_transform := _skeleton.get_bone_global_pose(tip_bone)
+			marker.transform = achieved_transform
+			var ray := _arm_debug_achieved_ray.get(side) as Node3D
+			if ray != null:
+				ray.transform = _hand_ray_transform(achieved_transform, side)
 
 
 func reset_hand_orientation_calibration() -> void:
@@ -397,6 +461,9 @@ func _apply_arm_pose(landmarks: Dictionary, target_side: String, source_side: St
 	var hand_debug := _arm_debug_hand.get(target_side) as MeshInstance3D
 	if hand_debug != null:
 		hand_debug.transform = ik.target
+	var target_ray := _arm_debug_target_ray.get(target_side) as Node3D
+	if target_ray != null:
+		target_ray.transform = _hand_ray_transform(ik.target, target_side)
 	var elbow_debug := _arm_debug_elbow.get(target_side) as MeshInstance3D
 	if elbow_debug != null:
 		elbow_debug.position = pole_position

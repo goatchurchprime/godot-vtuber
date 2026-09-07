@@ -175,7 +175,7 @@ func get_status() -> String:
 	if _interface != null and _interface.is_initialized():
 		if _interface.has_method("get_session_state"):
 			var session_state := int(_interface.get_session_state())
-			session = "FOCUSED" if session_state == 5 else "state %d (controller actions need XR focus)" % session_state
+			session = "FOCUSED" if session_state == 5 else "state %d (poses may pause without XR focus)" % session_state
 		else:
 			session = "active"
 	return "%s | %s | frames %d rejected %d" % [status, session, received_frames, rejected_frames]
