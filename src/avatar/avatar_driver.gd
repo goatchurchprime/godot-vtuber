@@ -37,6 +37,7 @@ const VISEME_SHAPE_ALIASES := [
 @export_range(-0.5, 0.5, 0.01) var hand_height_offset := 0.12
 @export var mirror_controller_assignment := true
 @export var show_ik_debug := true
+@export_range(0.05, 1.0, 0.01) var elbow_pole_distance := 0.35
 
 var status := "no avatar"
 var _meshes: Array[MeshInstance3D] = []
@@ -50,10 +51,12 @@ var _displayed_visemes := PackedFloat32Array()
 var _head_reference_position := Vector3.ZERO
 var _arm_ik: Dictionary = {}
 var _arm_tip_bones: Dictionary = {}
+var _arm_root_bones: Dictionary = {}
 var _arm_tip_rest_basis: Dictionary = {}
 var _arm_controller_reference: Dictionary = {}
 var _arm_debug_hand: Dictionary = {}
 var _arm_debug_elbow: Dictionary = {}
+var _arm_debug_achieved: Dictionary = {}
 
 
 func _ready() -> void:
@@ -62,6 +65,7 @@ func _ready() -> void:
 
 
 func _process(delta: float) -> void:
+	_update_achieved_hand_debug()
 	if _target_visemes.is_empty():
 		return
 	if _displayed_visemes.size() != _target_visemes.size():
@@ -120,10 +124,12 @@ func _find_head_bone(root: Node) -> void:
 func _configure_arm_ik() -> void:
 	_arm_ik.clear()
 	_arm_tip_bones.clear()
+	_arm_root_bones.clear()
 	_arm_tip_rest_basis.clear()
 	_arm_controller_reference.clear()
 	_arm_debug_hand.clear()
 	_arm_debug_elbow.clear()
+	_arm_debug_achieved.clear()
 	if _skeleton == null:
 		return
 	for side: String in ["left", "right"]:
@@ -144,6 +150,7 @@ func _configure_arm_ik() -> void:
 		_arm_ik[side] = ik
 		var tip_bone := _skeleton.find_bone(tip_name)
 		_arm_tip_bones[side] = tip_bone
+		_arm_root_bones[side] = _skeleton.find_bone(root_name)
 		_arm_tip_rest_basis[side] = _skeleton.get_bone_global_pose(tip_bone).basis
 		_create_arm_debug(side)
 
@@ -171,6 +178,28 @@ func _create_arm_debug(side: String) -> void:
 	elbow_marker.visible = show_ik_debug
 	_skeleton.add_child(elbow_marker)
 	_arm_debug_elbow[side] = elbow_marker
+	var achieved_box := MeshInstance3D.new()
+	var achieved_mesh := BoxMesh.new()
+	achieved_mesh.size = Vector3(0.10, 0.04, 0.16)
+	achieved_box.mesh = achieved_mesh
+	var achieved_material := StandardMaterial3D.new()
+	achieved_material.albedo_color = Color(1.0, 1.0, 1.0, 0.75)
+	achieved_material.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+	achieved_material.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+	achieved_box.material_override = achieved_material
+	achieved_box.visible = show_ik_debug
+	_skeleton.add_child(achieved_box)
+	_arm_debug_achieved[side] = achieved_box
+
+
+func _update_achieved_hand_debug() -> void:
+	if _skeleton == null or not show_ik_debug:
+		return
+	for side: String in _arm_debug_achieved:
+		var marker := _arm_debug_achieved[side] as MeshInstance3D
+		var tip_bone := int(_arm_tip_bones.get(side, -1))
+		if marker != null and tip_bone >= 0:
+			marker.transform = _skeleton.get_bone_global_pose(tip_bone)
 
 
 func _find_skeleton(node: Node) -> Skeleton3D:
@@ -340,6 +369,10 @@ func _apply_arm_pose(landmarks: Dictionary, target_side: String, source_side: St
 		return
 	var hand_position := _map_human_position(position_value)
 	var elbow_position := _map_human_position(elbow_value)
+	var root_bone := int(_arm_root_bones.get(target_side, -1))
+	var shoulder_position := _skeleton.get_bone_global_pose(root_bone).origin \
+		if root_bone >= 0 else _head_reference_position
+	var pole_position := _elbow_pole_target(shoulder_position, hand_position, elbow_position, target_side)
 	var target_basis: Basis = _arm_tip_rest_basis.get(target_side, Basis.IDENTITY)
 	var rotation_value: Variant = hand_value.get("rotation_quaternion", [])
 	if rotation_value is Array and rotation_value.size() == 4:
@@ -355,15 +388,28 @@ func _apply_arm_pose(landmarks: Dictionary, target_side: String, source_side: St
 		var controller_delta := controller_basis * controller_reference.inverse()
 		target_basis = controller_delta * target_basis
 	ik.target = Transform3D(target_basis.orthonormalized(), hand_position)
-	ik.magnet = elbow_position
+	ik.magnet = pole_position
 	var hand_debug := _arm_debug_hand.get(target_side) as MeshInstance3D
 	if hand_debug != null:
 		hand_debug.transform = ik.target
 	var elbow_debug := _arm_debug_elbow.get(target_side) as MeshInstance3D
 	if elbow_debug != null:
-		elbow_debug.position = elbow_position
+		elbow_debug.position = pole_position
 	if not ik.is_running():
 		ik.start()
+
+
+func _elbow_pole_target(shoulder: Vector3, wrist: Vector3, elbow: Vector3, side: String) -> Vector3:
+	var shoulder_to_wrist := wrist - shoulder
+	var line_length_squared := shoulder_to_wrist.length_squared()
+	var projected := shoulder
+	if line_length_squared > 0.000001:
+		var along := clampf((elbow - shoulder).dot(shoulder_to_wrist) / line_length_squared, 0.0, 1.0)
+		projected = shoulder + shoulder_to_wrist * along
+	var pole_direction := (elbow - projected).normalized()
+	if pole_direction.is_zero_approx():
+		pole_direction = Vector3.LEFT if side == "right" else Vector3.RIGHT
+	return elbow + pole_direction * elbow_pole_distance
 
 
 func _map_human_position(value: Array) -> Vector3:

@@ -63,6 +63,10 @@ func _run() -> void:
 	assert(right_ik.use_magnet)
 	assert(right_ik.override_tip_basis)
 	assert(avatar._arm_debug_hand.size() == 2 and avatar._arm_debug_elbow.size() == 2)
+	assert(avatar._arm_debug_achieved.size() == 2)
+	var source_elbow: Array = pose.landmarks.left_elbow
+	var mapped_elbow: Vector3 = avatar._map_human_position(source_elbow)
+	assert(right_ik.magnet.distance_to(mapped_elbow) > 0.3, "pole target should be displaced beyond the estimated elbow")
 	var neutral_hand_basis := right_ik.target.basis
 	pose.landmarks.left_hand.rotation_quaternion = [0.0, 0.0, sin(0.2), cos(0.2)]
 	avatar.set_pose(pose)
