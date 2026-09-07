@@ -68,6 +68,7 @@ func _run() -> void:
 	assert(avatar._arm_debug_hand.size() == 2 and avatar._arm_debug_elbow.size() == 2)
 	assert(avatar._arm_debug_achieved.size() == 2)
 	assert(avatar._arm_debug_target_ray.size() == 2 and avatar._arm_debug_achieved_ray.size() == 2)
+	assert(avatar._arm_debug_target_palm.size() == 2 and avatar._arm_debug_achieved_palm.size() == 2)
 	assert(not (avatar._arm_hand_axes.right as Vector3).is_zero_approx())
 	var source_elbow: Array = pose.landmarks.left_elbow
 	var mapped_elbow: Vector3 = avatar._map_human_position(source_elbow)

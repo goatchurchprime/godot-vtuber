@@ -58,8 +58,11 @@ var _arm_debug_hand: Dictionary = {}
 var _arm_debug_elbow: Dictionary = {}
 var _arm_debug_achieved: Dictionary = {}
 var _arm_hand_axes: Dictionary = {}
+var _arm_palm_normal_axes: Dictionary = {}
 var _arm_debug_target_ray: Dictionary = {}
 var _arm_debug_achieved_ray: Dictionary = {}
+var _arm_debug_target_palm: Dictionary = {}
+var _arm_debug_achieved_palm: Dictionary = {}
 
 
 func _ready() -> void:
@@ -135,8 +138,11 @@ func _configure_arm_ik() -> void:
 	_arm_debug_elbow.clear()
 	_arm_debug_achieved.clear()
 	_arm_hand_axes.clear()
+	_arm_palm_normal_axes.clear()
 	_arm_debug_target_ray.clear()
 	_arm_debug_achieved_ray.clear()
+	_arm_debug_target_palm.clear()
+	_arm_debug_achieved_palm.clear()
 	if _skeleton == null:
 		return
 	for side: String in ["left", "right"]:
@@ -160,6 +166,7 @@ func _configure_arm_ik() -> void:
 		_arm_root_bones[side] = _skeleton.find_bone(root_name)
 		_arm_tip_rest_basis[side] = _skeleton.get_bone_global_pose(tip_bone).basis
 		_arm_hand_axes[side] = _find_hand_forward_axis(tip_bone)
+		_arm_palm_normal_axes[side] = _find_palm_normal_axis(tip_bone, _arm_hand_axes[side])
 		_create_arm_debug(side)
 
 
@@ -204,17 +211,26 @@ func _create_arm_debug(side: String) -> void:
 	var achieved_ray := _create_hand_ray(achieved_material)
 	_skeleton.add_child(achieved_ray)
 	_arm_debug_achieved_ray[side] = achieved_ray
+	var palm_material := StandardMaterial3D.new()
+	palm_material.albedo_color = Color(1.0, 0.9, 0.1, 0.9)
+	palm_material.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+	var target_palm := _create_hand_ray(palm_material, 0.13)
+	_skeleton.add_child(target_palm)
+	_arm_debug_target_palm[side] = target_palm
+	var achieved_palm := _create_hand_ray(achieved_material, 0.13)
+	_skeleton.add_child(achieved_palm)
+	_arm_debug_achieved_palm[side] = achieved_palm
 
 
-func _create_hand_ray(material: Material) -> Node3D:
+func _create_hand_ray(material: Material, length := 0.22) -> Node3D:
 	var marker := Node3D.new()
 	marker.visible = show_ik_debug
 	var shaft := MeshInstance3D.new()
 	var shaft_mesh := BoxMesh.new()
-	shaft_mesh.size = Vector3(0.018, 0.018, 0.22)
+	shaft_mesh.size = Vector3(0.018, 0.018, length)
 	shaft.mesh = shaft_mesh
 	shaft.material_override = material
-	shaft.position.z = -0.11
+	shaft.position.z = -length * 0.5
 	marker.add_child(shaft)
 	var tip := MeshInstance3D.new()
 	var tip_mesh := SphereMesh.new()
@@ -222,7 +238,7 @@ func _create_hand_ray(material: Material) -> Node3D:
 	tip_mesh.height = 0.06
 	tip.mesh = tip_mesh
 	tip.material_override = material
-	tip.position.z = -0.22
+	tip.position.z = -length
 	marker.add_child(tip)
 	return marker
 
@@ -244,8 +260,39 @@ func _find_hand_forward_axis(hand_bone: int) -> Vector3:
 	return Vector3(0.0, 0.0, -1.0)
 
 
+func _find_palm_normal_axis(hand_bone: int, forward_axis: Vector3) -> Vector3:
+	var hand_pose := _skeleton.get_bone_global_pose(hand_bone)
+	var index_direction := Vector3.ZERO
+	var little_direction := Vector3.ZERO
+	for bone_index in _skeleton.get_bone_count():
+		var bone_name := String(_skeleton.get_bone_name(bone_index)).to_lower()
+		var is_index := "indexproximal" in bone_name or "index_proximal" in bone_name
+		var is_little := "littleproximal" in bone_name or "little_proximal" in bone_name
+		if not is_index and not is_little:
+			continue
+		var ancestor := _skeleton.get_bone_parent(bone_index)
+		while ancestor >= 0 and ancestor != hand_bone:
+			ancestor = _skeleton.get_bone_parent(ancestor)
+		if ancestor != hand_bone:
+			continue
+		var local_direction := hand_pose.basis.inverse() * (
+			_skeleton.get_bone_global_pose(bone_index).origin - hand_pose.origin
+		).normalized()
+		if is_index:
+			index_direction = local_direction
+		else:
+			little_direction = local_direction
+	var across := (index_direction - little_direction).normalized()
+	var normal := forward_axis.cross(across).normalized()
+	return normal if not normal.is_zero_approx() else Vector3.UP
+
+
 func _hand_ray_transform(hand_transform: Transform3D, side: String) -> Transform3D:
 	var local_axis: Vector3 = _arm_hand_axes.get(side, Vector3(0.0, 0.0, -1.0))
+	return _axis_ray_transform(hand_transform, local_axis)
+
+
+func _axis_ray_transform(hand_transform: Transform3D, local_axis: Vector3) -> Transform3D:
 	var up := Vector3.UP
 	if absf(local_axis.dot(up)) > 0.95:
 		up = Vector3.RIGHT
@@ -265,6 +312,9 @@ func _update_achieved_hand_debug() -> void:
 			var ray := _arm_debug_achieved_ray.get(side) as Node3D
 			if ray != null:
 				ray.transform = _hand_ray_transform(achieved_transform, side)
+			var palm := _arm_debug_achieved_palm.get(side) as Node3D
+			if palm != null:
+				palm.transform = _axis_ray_transform(achieved_transform, _arm_palm_normal_axes[side])
 
 
 func reset_hand_orientation_calibration() -> void:
@@ -464,6 +514,9 @@ func _apply_arm_pose(landmarks: Dictionary, target_side: String, source_side: St
 	var target_ray := _arm_debug_target_ray.get(target_side) as Node3D
 	if target_ray != null:
 		target_ray.transform = _hand_ray_transform(ik.target, target_side)
+	var target_palm := _arm_debug_target_palm.get(target_side) as Node3D
+	if target_palm != null:
+		target_palm.transform = _axis_ray_transform(ik.target, _arm_palm_normal_axes[target_side])
 	var elbow_debug := _arm_debug_elbow.get(target_side) as MeshInstance3D
 	if elbow_debug != null:
 		elbow_debug.position = pole_position
@@ -490,3 +543,27 @@ func _map_human_position(value: Array) -> Vector3:
 	return _head_reference_position + Vector3(
 		float(value[0]), float(value[1]) + hand_height_offset, -float(value[2])
 	)
+
+
+func get_ik_diagnostic() -> Dictionary:
+	var result := {}
+	for side: String in _arm_ik:
+		var ik := _arm_ik[side] as SkeletonIK3D
+		var tip_bone := int(_arm_tip_bones.get(side, -1))
+		result[side] = {
+			"running": ik != null and ik.is_running(),
+			"target": _transform_array(ik.target) if ik != null else [],
+			"achieved": _transform_array(_skeleton.get_bone_global_pose(tip_bone)) if tip_bone >= 0 else [],
+			"finger_axis": _vector_array(_arm_hand_axes.get(side, Vector3.ZERO)),
+			"palm_normal": _vector_array(_arm_palm_normal_axes.get(side, Vector3.ZERO)),
+		}
+	return result
+
+
+func _transform_array(value: Transform3D) -> Array:
+	var quaternion := value.basis.get_rotation_quaternion()
+	return [value.origin.x, value.origin.y, value.origin.z, quaternion.x, quaternion.y, quaternion.z, quaternion.w]
+
+
+func _vector_array(value: Vector3) -> Array:
+	return [value.x, value.y, value.z]

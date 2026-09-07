@@ -147,6 +147,7 @@ func _save_diagnostic_screenshot() -> void:
 		print("VTUBER_SCREENSHOT ", ProjectSettings.globalize_path(path))
 		if latest_pose_frame != null:
 			print("VTUBER_POSE ", JSON.stringify(latest_pose_frame.landmarks))
+			print("VTUBER_IK ", JSON.stringify(avatar.get_ik_diagnostic()))
 	else:
 		screenshot_button.text = "Save failed"
 		push_error("Could not save diagnostic screenshot: %s" % error_string(error))
