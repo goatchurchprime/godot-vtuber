@@ -65,7 +65,6 @@ func _ready() -> void:
 
 
 func _process(delta: float) -> void:
-	_update_achieved_hand_debug()
 	if _target_visemes.is_empty():
 		return
 	if _displayed_visemes.size() != _target_visemes.size():
@@ -119,6 +118,8 @@ func _find_head_bone(root: Node) -> void:
 		_head_rest_rotation = _skeleton.get_bone_pose_rotation(_head_bone)
 		_head_reference_position = _skeleton.get_bone_global_pose(_head_bone).origin
 	_configure_arm_ik()
+	if not _skeleton.skeleton_updated.is_connected(_update_achieved_hand_debug):
+		_skeleton.skeleton_updated.connect(_update_achieved_hand_debug)
 
 
 func _configure_arm_ik() -> void:
@@ -200,6 +201,10 @@ func _update_achieved_hand_debug() -> void:
 		var tip_bone := int(_arm_tip_bones.get(side, -1))
 		if marker != null and tip_bone >= 0:
 			marker.transform = _skeleton.get_bone_global_pose(tip_bone)
+
+
+func reset_hand_orientation_calibration() -> void:
+	_arm_controller_reference.clear()
 
 
 func _find_skeleton(node: Node) -> Skeleton3D:

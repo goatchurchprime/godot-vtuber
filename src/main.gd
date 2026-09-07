@@ -32,6 +32,8 @@ const DIAGNOSTIC_INTERVAL_SEC := 0.25
 @onready var microphone: CheckButton = %Microphone
 @onready var monitor: CheckButton = %Monitor
 @onready var screenshot_button: Button = %Screenshot
+@onready var copy_status_button: Button = %CopyStatus
+@onready var calibrate_hands_button: Button = %CalibrateHands
 @onready var delay: SpinBox = %Delay
 @onready var gate_db: SpinBox = %GateDb
 @onready var mouth_attack: SpinBox = %MouthAttack
@@ -87,6 +89,8 @@ func _ready() -> void:
 	microphone.toggled.connect(_set_microphone_enabled)
 	monitor.toggled.connect(_set_monitor_enabled)
 	screenshot_button.pressed.connect(_save_diagnostic_screenshot)
+	copy_status_button.pressed.connect(_copy_tracking_status)
+	calibrate_hands_button.pressed.connect(_calibrate_hands)
 	delay.value_changed.connect(_restart_playout.bind())
 	mouth_attack.value_changed.connect(_set_mouth_attack)
 	_set_mouth_attack(mouth_attack.value)
@@ -139,6 +143,16 @@ func _save_diagnostic_screenshot() -> void:
 	else:
 		screenshot_button.text = "Save failed"
 		push_error("Could not save diagnostic screenshot: %s" % error_string(error))
+
+
+func _copy_tracking_status() -> void:
+	DisplayServer.clipboard_set(pose_status.text)
+	copy_status_button.text = "Copied"
+
+
+func _calibrate_hands() -> void:
+	avatar.reset_hand_orientation_calibration()
+	calibrate_hands_button.text = "Calibrated"
 
 
 func _load_optional_extension(path: String, provided_class: StringName) -> void:

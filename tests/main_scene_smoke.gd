@@ -30,6 +30,8 @@ func _run() -> void:
 	assert(main.tracking_selector.item_count == 4)
 	assert(main.pose_status is LineEdit and not main.pose_status.editable)
 	assert(main.screenshot_button is Button)
+	assert(main.copy_status_button is Button)
+	assert(main.calibrate_hands_button is Button)
 	assert(main.tracking_selector.selected == 0)
 	assert(main.xr_submission_viewport == null)
 	main.avatar_y.value = 0.25
