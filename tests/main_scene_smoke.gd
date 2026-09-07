@@ -77,6 +77,12 @@ func _run() -> void:
 	pose.landmarks.left_hand.rotation_quaternion = [0.0, 0.0, sin(0.2), cos(0.2)]
 	avatar.set_pose(pose)
 	assert(not right_ik.target.basis.is_equal_approx(neutral_hand_basis), "controller rotation should rotate the avatar wrist")
+	avatar.reset_hand_orientation_calibration()
+	avatar.set_pose(pose)
+	var calibrated_finger: Vector3 = right_ik.target.basis * avatar._arm_hand_axes.right
+	var calibrated_palm: Vector3 = right_ik.target.basis * avatar._arm_palm_normal_axes.right
+	assert(calibrated_finger.dot(Vector3.BACK) > 0.99, "calibrated fingers should point forward from the avatar")
+	assert(calibrated_palm.dot(Vector3.DOWN) > 0.99, "calibrated palms should face down")
 	await process_frame
 	await process_frame
 	var achieved_attachment := avatar._arm_debug_attachment.right as BoneAttachment3D

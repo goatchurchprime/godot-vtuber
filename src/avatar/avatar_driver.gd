@@ -53,6 +53,7 @@ var _arm_ik: Dictionary = {}
 var _arm_tip_bones: Dictionary = {}
 var _arm_root_bones: Dictionary = {}
 var _arm_tip_rest_basis: Dictionary = {}
+var _arm_neutral_target_basis: Dictionary = {}
 var _arm_controller_reference: Dictionary = {}
 var _arm_debug_hand: Dictionary = {}
 var _arm_debug_elbow: Dictionary = {}
@@ -132,6 +133,7 @@ func _configure_arm_ik() -> void:
 	_arm_tip_bones.clear()
 	_arm_root_bones.clear()
 	_arm_tip_rest_basis.clear()
+	_arm_neutral_target_basis.clear()
 	_arm_controller_reference.clear()
 	_arm_debug_hand.clear()
 	_arm_debug_elbow.clear()
@@ -167,6 +169,7 @@ func _configure_arm_ik() -> void:
 		_arm_tip_rest_basis[side] = _skeleton.get_bone_global_pose(tip_bone).basis
 		_arm_hand_axes[side] = _find_hand_forward_axis(tip_bone)
 		_arm_palm_normal_axes[side] = _find_palm_normal_axis(tip_bone, _arm_hand_axes[side])
+		_arm_neutral_target_basis[side] = _arm_tip_rest_basis[side]
 		_create_arm_debug(side)
 
 
@@ -311,6 +314,17 @@ func _axis_ray_transform(hand_transform: Transform3D, local_axis: Vector3) -> Tr
 
 func reset_hand_orientation_calibration() -> void:
 	_arm_controller_reference.clear()
+	for side: String in _arm_ik:
+		_arm_neutral_target_basis[side] = _forward_facing_hand_basis(side)
+
+
+func _forward_facing_hand_basis(side: String) -> Basis:
+	var local_finger: Vector3 = _arm_hand_axes.get(side, Vector3(0.0, 0.0, -1.0))
+	var local_palm: Vector3 = _arm_palm_normal_axes.get(side, Vector3.DOWN)
+	var local_frame := Basis.looking_at(local_finger, local_palm)
+	# The imported avatar faces the broadcast camera along scene +Z.
+	var desired_frame := Basis.looking_at(Vector3.BACK, Vector3.DOWN)
+	return (desired_frame * local_frame.inverse()).orthonormalized()
 
 
 func _find_skeleton(node: Node) -> Skeleton3D:
@@ -484,7 +498,7 @@ func _apply_arm_pose(landmarks: Dictionary, target_side: String, source_side: St
 	var shoulder_position := _skeleton.get_bone_global_pose(root_bone).origin \
 		if root_bone >= 0 else _head_reference_position
 	var pole_position := _elbow_pole_target(shoulder_position, hand_position, elbow_position, target_side)
-	var target_basis: Basis = _arm_tip_rest_basis.get(target_side, Basis.IDENTITY)
+	var target_basis: Basis = _arm_neutral_target_basis.get(target_side, Basis.IDENTITY)
 	var rotation_value: Variant = hand_value.get("rotation_quaternion", [])
 	if rotation_value is Array and rotation_value.size() == 4:
 		var tracked_basis := Basis(Quaternion(

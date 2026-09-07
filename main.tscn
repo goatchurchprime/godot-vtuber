@@ -234,7 +234,7 @@ text = "Copy status"
 unique_name_in_owner = true
 layout_mode = 2
 text = "Calibrate hands"
-tooltip_text = "Hold both controller handles horizontally, then click"
+tooltip_text = "Capture the current controller rotations as hands-forward, palms-down"
 
 [node name="Screenshot" type="Button" parent="Margin/Rows/Columns/Diagnostics/Margin/Rows/TrackingActions"]
 unique_name_in_owner = true
