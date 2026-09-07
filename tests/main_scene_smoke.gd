@@ -29,6 +29,7 @@ func _run() -> void:
 	assert(main.performance_status != null)
 	assert(main.tracking_selector.item_count == 4)
 	assert(main.pose_status is LineEdit and not main.pose_status.editable)
+	assert(main.screenshot_button is Button)
 	assert(main.tracking_selector.selected == 0)
 	assert(main.xr_submission_viewport == null)
 	main.avatar_y.value = 0.25
@@ -56,15 +57,16 @@ func _run() -> void:
 	avatar.set_pose(pose)
 	var head_delta: Quaternion = avatar._head_rest_rotation.inverse() * avatar._skeleton.get_bone_pose_rotation(avatar._head_bone)
 	assert(head_delta.get_euler().x < 0.0, "tracked nod pitch should be mirrored")
-	assert(left_ik.is_running(), "left IK should start after its first valid target")
-	assert(not right_ik.is_running(), "untracked right IK should remain stopped")
-	assert(left_ik.target.origin.x > avatar._head_reference_position.x)
-	assert(left_ik.use_magnet)
-	assert(left_ik.override_tip_basis)
-	var neutral_hand_basis := left_ik.target.basis
+	assert(not left_ik.is_running(), "mirrored untracked left IK should remain stopped")
+	assert(right_ik.is_running(), "left controller should drive screen-left/right-arm IK in mirror mode")
+	assert(right_ik.target.origin.x < avatar._head_reference_position.x)
+	assert(right_ik.use_magnet)
+	assert(right_ik.override_tip_basis)
+	assert(avatar._arm_debug_hand.size() == 2 and avatar._arm_debug_elbow.size() == 2)
+	var neutral_hand_basis := right_ik.target.basis
 	pose.landmarks.left_hand.rotation_quaternion = [0.0, 0.0, sin(0.2), cos(0.2)]
 	avatar.set_pose(pose)
-	assert(not left_ik.target.basis.is_equal_approx(neutral_hand_basis), "controller rotation should rotate the avatar wrist")
+	assert(not right_ik.target.basis.is_equal_approx(neutral_hand_basis), "controller rotation should rotate the avatar wrist")
 	var environment: WorldEnvironment = main.get_node("Margin/Rows/Columns/Preview/PreviewLayout/ViewportContainer/Viewport/Studio/Environment")
 	assert(environment.environment.ambient_light_energy <= 0.25, "studio ambient light is still over-bright")
 	print("Main scene ready | %s | %s" % [stream.status, avatar.status])

@@ -31,6 +31,7 @@ const DIAGNOSTIC_INTERVAL_SEC := 0.25
 @onready var level_text: Label = %LevelText
 @onready var microphone: CheckButton = %Microphone
 @onready var monitor: CheckButton = %Monitor
+@onready var screenshot_button: Button = %Screenshot
 @onready var delay: SpinBox = %Delay
 @onready var gate_db: SpinBox = %GateDb
 @onready var mouth_attack: SpinBox = %MouthAttack
@@ -85,6 +86,7 @@ func _ready() -> void:
 	_populate_output_devices()
 	microphone.toggled.connect(_set_microphone_enabled)
 	monitor.toggled.connect(_set_monitor_enabled)
+	screenshot_button.pressed.connect(_save_diagnostic_screenshot)
 	delay.value_changed.connect(_restart_playout.bind())
 	mouth_attack.value_changed.connect(_set_mouth_attack)
 	_set_mouth_attack(mouth_attack.value)
@@ -119,6 +121,24 @@ func _process(delta: float) -> void:
 	if _diagnostic_elapsed >= DIAGNOSTIC_INTERVAL_SEC:
 		_diagnostic_elapsed = 0.0
 		_update_diagnostics()
+
+
+func _unhandled_key_input(event: InputEvent) -> void:
+	if event is InputEventKey and event.pressed and not event.echo and event.keycode == KEY_F12:
+		_save_diagnostic_screenshot()
+
+
+func _save_diagnostic_screenshot() -> void:
+	await RenderingServer.frame_post_draw
+	var image := get_viewport().get_texture().get_image()
+	var path := "user://vtuber-diagnostic.png"
+	var error := image.save_png(path)
+	if error == OK:
+		screenshot_button.text = "Saved"
+		print("VTUBER_SCREENSHOT ", ProjectSettings.globalize_path(path))
+	else:
+		screenshot_button.text = "Save failed"
+		push_error("Could not save diagnostic screenshot: %s" % error_string(error))
 
 
 func _load_optional_extension(path: String, provided_class: StringName) -> void:

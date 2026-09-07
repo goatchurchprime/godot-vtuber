@@ -94,16 +94,15 @@ horizontal_alignment = 1
 custom_minimum_size = Vector2(340, 0)
 layout_mode = 2
 
-[node name="Margin" type="MarginContainer" parent="Margin/Rows/Columns/Diagnostics" unique_id=1367612583]
+[node name="Margin" type="ScrollContainer" parent="Margin/Rows/Columns/Diagnostics" unique_id=1367612583]
 layout_mode = 2
-theme_override_constants/margin_left = 16
-theme_override_constants/margin_top = 16
-theme_override_constants/margin_right = 16
-theme_override_constants/margin_bottom = 16
+horizontal_scroll_mode = 0
+vertical_scroll_mode = 1
 
 [node name="Rows" type="VBoxContainer" parent="Margin/Rows/Columns/Diagnostics/Margin" unique_id=200014668]
 layout_mode = 2
-theme_override_constants/separation = 10
+size_flags_horizontal = 3
+theme_override_constants/separation = 8
 
 [node name="Heading" type="Label" parent="Margin/Rows/Columns/Diagnostics/Margin/Rows" unique_id=981377312]
 layout_mode = 2
@@ -139,6 +138,12 @@ text = "Mic"
 unique_name_in_owner = true
 layout_mode = 2
 text = "Monitor"
+
+[node name="Screenshot" type="Button" parent="Margin/Rows/Columns/Diagnostics/Margin/Rows/Controls"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "Save screenshot"
+tooltip_text = "Save the complete application view for remote debugging"
 
 [node name="DelayRow" type="HBoxContainer" parent="Margin/Rows/Columns/Diagnostics/Margin/Rows" unique_id=2016821337]
 layout_mode = 2
@@ -292,7 +297,7 @@ autowrap_mode = 2
 [node name="Footer" type="Label" parent="Margin/Rows" unique_id=169219621]
 unique_name_in_owner = true
 layout_mode = 2
-text = "Milestone 5 · source/filter lipsync + replaceable head/body tracking"
+text = "Milestone 5 · screenshot button/F12 · source/filter lipsync + replaceable tracking"
 
 [node name="MonitorPlayer" type="AudioStreamPlayer" parent="." unique_id=945566179]
 unique_name_in_owner = true

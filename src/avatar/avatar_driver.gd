@@ -35,6 +35,8 @@ const VISEME_SHAPE_ALIASES := [
 @export_range(0.0, 500.0, 5.0, "or_greater") var mouth_attack_ms := 80.0
 @export_range(0.0, 500.0, 5.0, "or_greater") var mouth_release_ms := 45.0
 @export_range(-0.5, 0.5, 0.01) var hand_height_offset := 0.12
+@export var mirror_controller_assignment := true
+@export var show_ik_debug := true
 
 var status := "no avatar"
 var _meshes: Array[MeshInstance3D] = []
@@ -50,6 +52,8 @@ var _arm_ik: Dictionary = {}
 var _arm_tip_bones: Dictionary = {}
 var _arm_tip_rest_basis: Dictionary = {}
 var _arm_controller_reference: Dictionary = {}
+var _arm_debug_hand: Dictionary = {}
+var _arm_debug_elbow: Dictionary = {}
 
 
 func _ready() -> void:
@@ -118,6 +122,8 @@ func _configure_arm_ik() -> void:
 	_arm_tip_bones.clear()
 	_arm_tip_rest_basis.clear()
 	_arm_controller_reference.clear()
+	_arm_debug_hand.clear()
+	_arm_debug_elbow.clear()
 	if _skeleton == null:
 		return
 	for side: String in ["left", "right"]:
@@ -139,6 +145,32 @@ func _configure_arm_ik() -> void:
 		var tip_bone := _skeleton.find_bone(tip_name)
 		_arm_tip_bones[side] = tip_bone
 		_arm_tip_rest_basis[side] = _skeleton.get_bone_global_pose(tip_bone).basis
+		_create_arm_debug(side)
+
+
+func _create_arm_debug(side: String) -> void:
+	var color := Color(0.1, 0.85, 1.0, 0.8) if side == "left" else Color(1.0, 0.2, 0.7, 0.8)
+	var material := StandardMaterial3D.new()
+	material.albedo_color = color
+	material.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+	material.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+	var hand_box := MeshInstance3D.new()
+	var box := BoxMesh.new()
+	box.size = Vector3(0.16, 0.06, 0.22)
+	hand_box.mesh = box
+	hand_box.material_override = material
+	hand_box.visible = show_ik_debug
+	_skeleton.add_child(hand_box)
+	_arm_debug_hand[side] = hand_box
+	var elbow_marker := MeshInstance3D.new()
+	var sphere := SphereMesh.new()
+	sphere.radius = 0.045
+	sphere.height = 0.09
+	elbow_marker.mesh = sphere
+	elbow_marker.material_override = material
+	elbow_marker.visible = show_ik_debug
+	_skeleton.add_child(elbow_marker)
+	_arm_debug_elbow[side] = elbow_marker
 
 
 func _find_skeleton(node: Node) -> Skeleton3D:
@@ -270,6 +302,7 @@ func set_pose(frame: Variant) -> void:
 		).normalized()
 		var tracked_euler := tracked_rotation.get_euler()
 		tracked_euler.x = -tracked_euler.x
+		tracked_euler.y = -tracked_euler.y
 		head_rotation = Quaternion.from_euler(tracked_euler)
 		has_head_rotation = true
 	else:
@@ -277,25 +310,29 @@ func set_pose(frame: Variant) -> void:
 		if rotation_value is Array and rotation_value.size() == 3:
 			head_rotation = Quaternion.from_euler(Vector3(
 				-deg_to_rad(float(rotation_value[0])),
-				deg_to_rad(float(rotation_value[1])),
+				-deg_to_rad(float(rotation_value[1])),
 				deg_to_rad(float(rotation_value[2])),
 			))
 			has_head_rotation = true
 	if has_head_rotation and _skeleton != null and _head_bone >= 0:
 		_skeleton.set_bone_pose_rotation(_head_bone, _head_rest_rotation * head_rotation)
-	_apply_arm_pose(frame.landmarks, "left")
-	_apply_arm_pose(frame.landmarks, "right")
+	if mirror_controller_assignment:
+		_apply_arm_pose(frame.landmarks, "right", "left")
+		_apply_arm_pose(frame.landmarks, "left", "right")
+	else:
+		_apply_arm_pose(frame.landmarks, "left", "left")
+		_apply_arm_pose(frame.landmarks, "right", "right")
 	var shoulder_value: Variant = frame.landmarks.get("shoulder_center", [])
 	if shoulder_value is Array and shoulder_value.size() >= 1:
 		_avatar_root.position.x = clampf(float(shoulder_value[0]), -0.25, 0.25)
 
 
-func _apply_arm_pose(landmarks: Dictionary, side: String) -> void:
-	var ik := _arm_ik.get(side) as SkeletonIK3D
+func _apply_arm_pose(landmarks: Dictionary, target_side: String, source_side: String) -> void:
+	var ik := _arm_ik.get(target_side) as SkeletonIK3D
 	if ik == null:
 		return
-	var hand_value: Variant = landmarks.get("%s_hand" % side, {})
-	var elbow_value: Variant = landmarks.get("%s_elbow" % side, [])
+	var hand_value: Variant = landmarks.get("%s_hand" % source_side, {})
+	var elbow_value: Variant = landmarks.get("%s_elbow" % source_side, [])
 	if not hand_value is Dictionary or not elbow_value is Array or elbow_value.size() != 3:
 		return
 	var position_value: Variant = hand_value.get("position", [])
@@ -303,29 +340,35 @@ func _apply_arm_pose(landmarks: Dictionary, side: String) -> void:
 		return
 	var hand_position := _map_human_position(position_value)
 	var elbow_position := _map_human_position(elbow_value)
-	var target_basis: Basis = _arm_tip_rest_basis.get(side, Basis.IDENTITY)
+	var target_basis: Basis = _arm_tip_rest_basis.get(target_side, Basis.IDENTITY)
 	var rotation_value: Variant = hand_value.get("rotation_quaternion", [])
 	if rotation_value is Array and rotation_value.size() == 4:
 		var tracked_basis := Basis(Quaternion(
 			float(rotation_value[0]), float(rotation_value[1]),
 			float(rotation_value[2]), float(rotation_value[3])
 		).normalized())
-		var broadcast_turn := Basis(Vector3.UP, PI)
-		var controller_basis := broadcast_turn * tracked_basis * broadcast_turn.inverse()
-		if not _arm_controller_reference.has(side):
-			_arm_controller_reference[side] = controller_basis
-		var controller_reference: Basis = _arm_controller_reference[side]
+		var mirror_basis := Basis.from_scale(Vector3(1.0, 1.0, -1.0))
+		var controller_basis := mirror_basis * tracked_basis * mirror_basis
+		if not _arm_controller_reference.has(target_side):
+			_arm_controller_reference[target_side] = controller_basis
+		var controller_reference: Basis = _arm_controller_reference[target_side]
 		var controller_delta := controller_basis * controller_reference.inverse()
 		target_basis = controller_delta * target_basis
 	ik.target = Transform3D(target_basis.orthonormalized(), hand_position)
 	ik.magnet = elbow_position
+	var hand_debug := _arm_debug_hand.get(target_side) as MeshInstance3D
+	if hand_debug != null:
+		hand_debug.transform = ik.target
+	var elbow_debug := _arm_debug_elbow.get(target_side) as MeshInstance3D
+	if elbow_debug != null:
+		elbow_debug.position = elbow_position
 	if not ik.is_running():
 		ik.start()
 
 
 func _map_human_position(value: Array) -> Vector3:
-	# A 180-degree broadcast turn preserves anatomical handedness: the user's
-	# left controller drives the avatar's left arm, which appears screen-right.
+	# Preserve screen-space X in mirror mode. The opposite anatomical arm is
+	# selected above so the chain does not cross through the avatar's torso.
 	return _head_reference_position + Vector3(
-		-float(value[0]), float(value[1]) + hand_height_offset, -float(value[2])
+		float(value[0]), float(value[1]) + hand_height_offset, -float(value[2])
 	)
