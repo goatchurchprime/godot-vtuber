@@ -18,6 +18,7 @@ window/size/viewport_width=1280
 window/size/viewport_height=720
 window/size/window_width_override=960
 window/size/window_height_override=540
+window/per_pixel_transparency/allowed=true
 window/stretch/mode="canvas_items"
 
 [editor_plugins]

@@ -34,6 +34,7 @@ func _run() -> void:
 	assert(main.calibrate_hands_button is Button)
 	assert(main.camera_zoom is HSlider and main.camera_yaw is HSlider and main.camera_pitch is HSlider)
 	assert(main.transparent_background is CheckButton)
+	assert(main.show_ik_markers is CheckButton)
 	assert(main.latest_pose_frame == null)
 	assert(main.tracking_selector.selected == 0)
 	assert(main.xr_submission_viewport == null)
@@ -47,6 +48,8 @@ func _run() -> void:
 	main.transparent_background.button_pressed = true
 	assert(main.broadcast_viewport.transparent_bg)
 	assert(is_zero_approx(main.studio_environment.environment.background_color.a))
+	main.show_ik_markers.button_pressed = false
+	assert(not (avatar._arm_debug_hand.right as Node3D).visible)
 	var springs: Array = avatar._avatar_root.get("spring_bones")
 	assert(springs.size() == 3, "expected two ear springs and one hair spring")
 	assert(float(springs[0].stiffness_scale) > 1.1, "ear spring tuning was not applied: %s" % springs[0].stiffness_scale)

@@ -53,6 +53,8 @@ const DIAGNOSTIC_INTERVAL_SEC := 0.25
 @onready var camera_yaw: HSlider = %CameraYaw
 @onready var camera_pitch: HSlider = %CameraPitch
 @onready var transparent_background: CheckButton = %TransparentBackground
+@onready var show_ik_markers: CheckButton = %ShowIkMarkers
+@onready var preview_panel: PanelContainer = $Margin/Rows/Columns/Preview
 @onready var camera_feedback: TextureRect = %CameraFeedback
 @onready var camera_feedback_status: Label = %CameraFeedbackStatus
 @onready var camera_feedback_window: Window = %CameraFeedbackWindow
@@ -86,6 +88,7 @@ var human_arm_solver := HumanArmSolverScript.new()
 var _camera_base_rotation := Vector3.ZERO
 var _camera_base_position := Vector3.ZERO
 var _opaque_background_color := Color(0.055, 0.065, 0.09, 1.0)
+var _opaque_window_clear_color := Color.BLACK
 
 
 func _ready() -> void:
@@ -111,10 +114,12 @@ func _ready() -> void:
 	_camera_base_rotation = broadcast_camera.rotation
 	_camera_base_position = broadcast_camera.position
 	_opaque_background_color = studio_environment.environment.background_color
+	_opaque_window_clear_color = RenderingServer.get_default_clear_color()
 	camera_zoom.value_changed.connect(_set_camera_zoom)
 	camera_yaw.value_changed.connect(_set_camera_framing)
 	camera_pitch.value_changed.connect(_set_camera_framing)
 	transparent_background.toggled.connect(_set_transparent_background)
+	show_ik_markers.toggled.connect(avatar.set_ik_debug_visible)
 	camera_feedback_window.close_requested.connect(camera_feedback_window.hide)
 	audio_status.text = _availability("Audio conditioning", "TwovoipOpusEncoder")
 	viseme_status.text = _availability("Viseme inference", "OnnxLoader")
@@ -318,9 +323,18 @@ func _set_camera_framing(_ignored: float) -> void:
 
 func _set_transparent_background(enabled: bool) -> void:
 	broadcast_viewport.transparent_bg = enabled
+	get_viewport().transparent_bg = enabled
+	DisplayServer.window_set_flag(DisplayServer.WINDOW_FLAG_TRANSPARENT, enabled)
 	var color := _opaque_background_color
 	color.a = 0.0 if enabled else 1.0
 	studio_environment.environment.background_color = color
+	var window_clear := _opaque_window_clear_color
+	window_clear.a = 0.0 if enabled else 1.0
+	RenderingServer.set_default_clear_color(window_clear)
+	if enabled:
+		preview_panel.add_theme_stylebox_override("panel", StyleBoxEmpty.new())
+	else:
+		preview_panel.remove_theme_stylebox_override("panel")
 
 
 func _set_mouth_attack(duration_ms: float) -> void:

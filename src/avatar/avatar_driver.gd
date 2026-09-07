@@ -388,6 +388,18 @@ func reset_hand_orientation_calibration() -> void:
 		_arm_neutral_target_basis[side] = _forward_facing_hand_basis(side)
 
 
+func set_ik_debug_visible(visible: bool) -> void:
+	show_ik_debug = visible
+	for markers: Dictionary in [
+		_arm_debug_hand, _arm_debug_elbow, _arm_debug_achieved,
+		_arm_debug_target_ray, _arm_debug_achieved_ray,
+		_arm_debug_target_palm, _arm_debug_achieved_palm,
+	]:
+		for marker: Variant in markers.values():
+			if marker is Node3D:
+				(marker as Node3D).visible = visible
+
+
 func begin_hand_orientation_calibration() -> void:
 	_save_hand_calibration_pending = true
 	reset_hand_orientation_calibration()
