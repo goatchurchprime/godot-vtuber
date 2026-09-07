@@ -37,9 +37,10 @@ func _run() -> void:
 	assert(main.latest_pose_frame == null)
 	assert(main.tracking_selector.selected == 0)
 	assert(main.xr_submission_viewport == null)
+	var camera: Camera3D = main.broadcast_camera
 	main.avatar_y.value = 0.25
-	assert(is_equal_approx(main.avatar_anchor.position.y, 0.25))
-	var camera: Camera3D = main.get_node("Margin/Rows/Columns/Preview/PreviewLayout/ViewportContainer/Viewport/Studio/BroadcastCamera")
+	assert(is_equal_approx(camera.position.y, main._camera_base_position.y + 0.25))
+	assert(is_zero_approx(main.avatar_anchor.position.y), "camera framing must not move the tracked avatar")
 	assert(camera.position.z >= 3.0, "broadcast camera is still framed as an extreme close-up")
 	main.camera_zoom.value = 24.0
 	assert(is_equal_approx(camera.fov, 24.0))
@@ -51,7 +52,6 @@ func _run() -> void:
 	assert(float(springs[0].stiffness_scale) > 1.1, "ear spring tuning was not applied: %s" % springs[0].stiffness_scale)
 	assert(float(springs[2].stiffness_scale) > 0.8, "hair spring tuning was not applied: %s" % springs[2].stiffness_scale)
 	assert(avatar._arm_ik.size() == 2, "expected standard IK chains for both arms")
-	assert(avatar._spine_ik != null, "expected seated spine IK from the fixed torso to the head")
 	var left_ik: SkeletonIK3D = avatar._arm_ik.left
 	var right_ik: SkeletonIK3D = avatar._arm_ik.right
 	assert(not left_ik.is_running(), "left IK must wait for a valid wrist target")
@@ -69,9 +69,13 @@ func _run() -> void:
 	}
 	HumanArmSolverScript.new().enrich(pose)
 	avatar.set_pose(pose)
-	assert(avatar._spine_ik.target.origin.distance_to(avatar._head_reference_position) > 0.12)
-	var head_delta: Quaternion = avatar._spine_target_basis.inverse() * avatar._spine_ik.target.basis
+	assert(avatar._skeleton.get_bone_pose_position(avatar._head_bone).distance_to(avatar._head_rest_position) > 0.08)
+	var head_delta: Quaternion = avatar._head_rest_rotation.inverse() * avatar._skeleton.get_bone_pose_rotation(avatar._head_bone)
 	assert(head_delta.get_euler().x < 0.0, "tracked nod pitch should be mirrored")
+	var controller_target_before_head_move: Vector3 = (avatar._arm_desired_target.right as Transform3D).origin
+	pose.landmarks.head_position = [-0.16, 0.18, 0.12]
+	avatar.set_pose(pose)
+	assert((avatar._arm_desired_target.right as Transform3D).origin.is_equal_approx(controller_target_before_head_move), "HMD translation must not alter a stationary controller target")
 	assert(not left_ik.is_running(), "mirrored untracked left IK should remain stopped")
 	assert(right_ik.is_running(), "left controller should drive screen-left/right-arm IK in mirror mode")
 	assert(right_ik.target.origin.x < avatar._head_reference_position.x)
@@ -91,9 +95,11 @@ func _run() -> void:
 	assert(right_pole.x < right_shoulder.x, "right-arm pole target must stay outward")
 	var first_pole := right_pole
 	pose.landmarks.left_hand.position[1] += 0.20
+	HumanArmSolverScript.new().enrich(pose)
 	avatar.set_pose(pose)
 	assert((avatar._arm_desired_pole.right as Vector3).distance_to(first_pole) > 0.09, "elbow pole should follow wrist motion")
 	pose.landmarks.left_hand.position[1] -= 0.20
+	HumanArmSolverScript.new().enrich(pose)
 	avatar.set_pose(pose)
 	var neutral_hand_basis := right_ik.target.basis
 	pose.landmarks.left_hand.rotation_quaternion = [0.0, 0.0, sin(0.2), cos(0.2)]

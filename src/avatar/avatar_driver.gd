@@ -59,19 +59,18 @@ var _avatar_root: Node3D
 var _skeleton: Skeleton3D
 var _head_bone := -1
 var _head_rest_rotation := Quaternion.IDENTITY
+var _head_rest_position := Vector3.ZERO
 var _chest_bone := -1
 var _chest_rest_rotation := Quaternion.IDENTITY
+var _chest_rest_position := Vector3.ZERO
 var _chest_target_delta := Quaternion.IDENTITY
 var _chest_displayed_delta := Quaternion.IDENTITY
 var _target_visemes := PackedFloat32Array()
 var _displayed_visemes := PackedFloat32Array()
 var _head_reference_position := Vector3.ZERO
-var _spine_ik: SkeletonIK3D
-var _spine_target_basis := Basis.IDENTITY
 var _arm_ik: Dictionary = {}
 var _arm_tip_bones: Dictionary = {}
 var _arm_root_bones: Dictionary = {}
-var _arm_root_rest_pose: Dictionary = {}
 var _arm_desired_target: Dictionary = {}
 var _arm_desired_pole: Dictionary = {}
 var _arm_tip_rest_basis: Dictionary = {}
@@ -97,7 +96,6 @@ func _ready() -> void:
 
 
 func _process(delta: float) -> void:
-	_update_chest_follow(delta)
 	if _target_visemes.is_empty():
 		return
 	if _displayed_visemes.size() != _target_visemes.size():
@@ -149,49 +147,21 @@ func _find_head_bone(root: Node) -> void:
 			break
 	if _head_bone >= 0:
 		_head_rest_rotation = _skeleton.get_bone_pose_rotation(_head_bone)
+		_head_rest_position = _skeleton.get_bone_pose_position(_head_bone)
 		_head_reference_position = _skeleton.get_bone_global_pose(_head_bone).origin
 	for bone_name: StringName in [&"Chest", &"chest", &"UpperChest", &"upperChest"]:
 		_chest_bone = _skeleton.find_bone(bone_name)
 		if _chest_bone >= 0:
 			_chest_rest_rotation = _skeleton.get_bone_pose_rotation(_chest_bone)
+			_chest_rest_position = _skeleton.get_bone_pose_position(_chest_bone)
 			break
 	_configure_arm_ik()
-	# Skeleton modifiers are evaluated back-to-front. Add the torso modifier
-	# after the arm modifiers so the spine resolves first and the arms finish at
-	# their world-space wrist targets instead of being carried along afterward.
-	_configure_spine_ik()
-
-
-func _configure_spine_ik() -> void:
-	_spine_ik = null
-	if _skeleton == null or _head_bone < 0:
-		return
-	var root_bone := -1
-	for bone_name: StringName in [&"Spine", &"spine", &"Chest", &"chest"]:
-		root_bone = _skeleton.find_bone(bone_name)
-		if root_bone >= 0:
-			break
-	if root_bone < 0:
-		return
-	_spine_ik = SkeletonIK3D.new()
-	_spine_ik.name = "SeatedSpineIK"
-	_spine_ik.root_bone = _skeleton.get_bone_name(root_bone)
-	_spine_ik.tip_bone = _skeleton.get_bone_name(_head_bone)
-	_spine_ik.override_tip_basis = true
-	_spine_ik.use_magnet = true
-	_spine_ik.max_iterations = 16
-	_spine_ik.min_distance = 0.001
-	_spine_target_basis = _skeleton.get_bone_global_pose(_head_bone).basis
-	_spine_ik.target = Transform3D(_spine_target_basis, _head_reference_position)
-	_spine_ik.magnet = _head_reference_position + Vector3(0.0, -0.30, -0.45)
-	_skeleton.add_child(_spine_ik)
 
 
 func _configure_arm_ik() -> void:
 	_arm_ik.clear()
 	_arm_tip_bones.clear()
 	_arm_root_bones.clear()
-	_arm_root_rest_pose.clear()
 	_arm_desired_target.clear()
 	_arm_desired_pole.clear()
 	_arm_tip_rest_basis.clear()
@@ -229,7 +199,6 @@ func _configure_arm_ik() -> void:
 		var tip_bone := _skeleton.find_bone(tip_name)
 		_arm_tip_bones[side] = tip_bone
 		_arm_root_bones[side] = _skeleton.find_bone(root_name)
-		_arm_root_rest_pose[side] = _skeleton.get_bone_global_pose(_arm_root_bones[side])
 		_arm_tip_rest_basis[side] = _skeleton.get_bone_global_pose(tip_bone).basis
 		_arm_hand_axes[side] = _find_hand_forward_axis(tip_bone)
 		_arm_palm_normal_axes[side] = _find_palm_normal_axis(tip_bone, _arm_hand_axes[side])
@@ -272,14 +241,6 @@ func _apply_hand_controls(side: String, hand_value: Dictionary) -> void:
 		var rotation := control.rest as Quaternion
 		rotation *= Quaternion(control.axis as Vector3, -float(control.amount) * weight)
 		_skeleton.set_bone_pose_rotation(int(control.bone), rotation)
-
-
-func _update_chest_follow(delta: float) -> void:
-	if _skeleton == null or _chest_bone < 0 or _spine_ik != null:
-		return
-	var alpha := 1.0 - exp(-delta / maxf(chest_follow_time_sec, 0.001))
-	_chest_displayed_delta = _chest_displayed_delta.slerp(_chest_target_delta, alpha)
-	_skeleton.set_bone_pose_rotation(_chest_bone, _chest_rest_rotation * _chest_displayed_delta)
 
 
 func _create_arm_debug(side: String) -> void:
@@ -616,10 +577,7 @@ func set_pose(frame: Variant) -> void:
 			))
 			has_head_rotation = true
 	if has_head_rotation and _skeleton != null and _head_bone >= 0:
-		if _spine_ik == null:
-			_skeleton.set_bone_pose_rotation(_head_bone, _head_rest_rotation * head_rotation)
-		else:
-			_spine_ik.target.basis = (_spine_target_basis * Basis(head_rotation)).orthonormalized()
+		_skeleton.set_bone_pose_rotation(_head_bone, _head_rest_rotation * head_rotation)
 		var head_euler := head_rotation.get_euler()
 		_chest_target_delta = Quaternion.from_euler(Vector3(
 			head_euler.x * chest_follow_strength * 0.65,
@@ -627,19 +585,15 @@ func set_pose(frame: Variant) -> void:
 			 head_euler.z * chest_follow_strength * 0.8,
 		))
 	var head_position_value: Variant = frame.landmarks.get("head_position", [])
-	if _spine_ik != null and head_position_value is Array and head_position_value.size() == 3:
+	if _skeleton != null and _head_bone >= 0 \
+			and head_position_value is Array and head_position_value.size() == 3:
 		var displacement := Vector3(
 			float(head_position_value[0]),
 			float(head_position_value[1]),
 			-float(head_position_value[2]),
 		) * head_translation_scale
 		displacement = displacement.limit_length(maximum_head_translation)
-		_spine_ik.target.origin = _head_reference_position + displacement
-		_spine_ik.magnet = _head_reference_position + displacement * 0.35 + Vector3(0.0, -0.30, -0.45)
-		# Resolve the torso once for this observation before updating the arm
-		# chains. Running overlapping continuous SkeletonIK modifiers lets the
-		# later torso pass carry already-solved wrists away from their targets.
-		_spine_ik.start(true)
+		_apply_seated_spine_pose(displacement)
 	if mirror_controller_assignment:
 		_apply_arm_pose(frame.landmarks, "right", "left")
 		_apply_arm_pose(frame.landmarks, "left", "right")
@@ -650,6 +604,32 @@ func set_pose(frame: Variant) -> void:
 	var shoulder_value: Variant = frame.landmarks.get("shoulder_center", [])
 	if shoulder_value is Array and shoulder_value.size() >= 1:
 		_avatar_root.position.x = clampf(float(shoulder_value[0]), -0.25, 0.25)
+
+
+func _apply_seated_spine_pose(displacement: Vector3) -> void:
+	# Pose the torso before arm IK. No torso modifier is allowed to run after the
+	# arms, preserving the invariant that a stationary controller has a
+	# stationary final wrist even while the HMD moves.
+	var chest_share := 0.22
+	if _chest_bone >= 0:
+		var chest_parent := _skeleton.get_bone_parent(_chest_bone)
+		var chest_parent_basis := _skeleton.get_bone_global_pose(chest_parent).basis \
+			if chest_parent >= 0 else Basis.IDENTITY
+		_skeleton.set_bone_pose_position(
+			_chest_bone,
+			_chest_rest_position + chest_parent_basis.inverse() * displacement * chest_share,
+		)
+		_chest_displayed_delta = _chest_target_delta
+		_skeleton.set_bone_pose_rotation(
+			_chest_bone, _chest_rest_rotation * _chest_displayed_delta,
+		)
+	var head_parent := _skeleton.get_bone_parent(_head_bone)
+	var head_parent_basis := _skeleton.get_bone_global_pose(head_parent).basis \
+		if head_parent >= 0 else Basis.IDENTITY
+	_skeleton.set_bone_pose_position(
+		_head_bone,
+		_head_rest_position + head_parent_basis.inverse() * displacement * (1.0 - chest_share),
+	)
 
 
 func _apply_arm_pose(landmarks: Dictionary, target_side: String, source_side: String) -> void:
@@ -687,12 +667,8 @@ func _apply_arm_pose(landmarks: Dictionary, target_side: String, source_side: St
 	var desired_target := Transform3D(target_basis.orthonormalized(), hand_position)
 	_arm_desired_target[target_side] = desired_target
 	_arm_desired_pole[target_side] = pole_position
-	var root_rest: Transform3D = _arm_root_rest_pose.get(target_side, Transform3D.IDENTITY)
-	var root_current := _skeleton.get_bone_global_pose(root_bone) \
-		if root_bone >= 0 else root_rest
-	var torso_delta := root_current * root_rest.affine_inverse()
-	ik.target = torso_delta.affine_inverse() * desired_target
-	ik.magnet = torso_delta.affine_inverse() * pole_position
+	ik.target = desired_target
+	ik.magnet = pole_position
 	var hand_debug := _arm_debug_hand.get(target_side) as MeshInstance3D
 	if hand_debug != null:
 		hand_debug.transform = desired_target
@@ -709,11 +685,14 @@ func _apply_arm_pose(landmarks: Dictionary, target_side: String, source_side: St
 		ik.start()
 
 
-func _elbow_pole_target(shoulder: Vector3, wrist: Vector3, _elbow: Vector3, side: String) -> Vector3:
-	# Follow the wrist smoothly without deriving a direction from the arm line,
-	# which can cross a singularity and flip the elbow plane by 180 degrees.
-	var outward := -1.0 if side == "right" else 1.0
-	return shoulder.lerp(wrist, 0.5) + Vector3(outward * 0.24, -0.28, 0.10)
+func _elbow_pole_target(shoulder: Vector3, _wrist: Vector3, elbow: Vector3, side: String) -> Vector3:
+	# The canonical human solver has already chosen the anatomical bend plane.
+	# Extend that direction into an IK magnet without deriving it from HMD pose.
+	var direction := (elbow - shoulder).normalized()
+	if direction.is_zero_approx():
+		var outward := -1.0 if side == "right" else 1.0
+		direction = Vector3(outward, -1.0, 0.15).normalized()
+	return shoulder + direction * 0.48
 
 
 func _map_human_position(value: Array) -> Vector3:

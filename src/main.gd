@@ -84,6 +84,7 @@ var _diagnostic_elapsed := 0.0
 var xr_submission_viewport: SubViewport
 var human_arm_solver := HumanArmSolverScript.new()
 var _camera_base_rotation := Vector3.ZERO
+var _camera_base_position := Vector3.ZERO
 var _opaque_background_color := Color(0.055, 0.065, 0.09, 1.0)
 
 
@@ -108,6 +109,7 @@ func _ready() -> void:
 	output_device.item_selected.connect(_select_output_device)
 	avatar_y.value_changed.connect(_set_avatar_height)
 	_camera_base_rotation = broadcast_camera.rotation
+	_camera_base_position = broadcast_camera.position
 	_opaque_background_color = studio_environment.environment.background_color
 	camera_zoom.value_changed.connect(_set_camera_zoom)
 	camera_yaw.value_changed.connect(_set_camera_framing)
@@ -301,7 +303,7 @@ func _select_tracking_backend(index: int) -> void:
 
 
 func _set_avatar_height(height: float) -> void:
-	avatar_anchor.position.y = height
+	broadcast_camera.position.y = _camera_base_position.y + height
 
 
 func _set_camera_zoom(fov_degrees: float) -> void:

@@ -73,21 +73,21 @@ theme_override_constants/separation = 4
 
 [node name="Up" type="Label" parent="Margin/Rows/Columns/Preview/PreviewLayout/Framing" unique_id=1446348584]
 layout_mode = 2
-text = "Up"
+text = "Camera up"
 horizontal_alignment = 1
 
 [node name="AvatarY" type="VSlider" parent="Margin/Rows/Columns/Preview/PreviewLayout/Framing" unique_id=711888005]
 unique_name_in_owner = true
 layout_mode = 2
 size_flags_vertical = 3
-tooltip_text = "Move the avatar vertically in the broadcast frame"
+tooltip_text = "Move the broadcast camera vertically; tracking and avatar anchors are unchanged"
 min_value = -1.0
 max_value = 1.0
 step = 0.01
 
 [node name="Down" type="Label" parent="Margin/Rows/Columns/Preview/PreviewLayout/Framing" unique_id=179994129]
 layout_mode = 2
-text = "Down"
+text = "Camera down"
 horizontal_alignment = 1
 
 [node name="Diagnostics" type="PanelContainer" parent="Margin/Rows/Columns" unique_id=2000276745]
