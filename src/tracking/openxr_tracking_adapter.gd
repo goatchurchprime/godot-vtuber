@@ -173,5 +173,9 @@ func _quaternion_array(value: Quaternion) -> Array[float]:
 func get_status() -> String:
 	var session := "inactive"
 	if _interface != null and _interface.is_initialized():
-		session = "state %s" % _interface.get_session_state() if _interface.has_method("get_session_state") else "active"
+		if _interface.has_method("get_session_state"):
+			var session_state := int(_interface.get_session_state())
+			session = "FOCUSED" if session_state == 5 else "state %d (controller actions need XR focus)" % session_state
+		else:
+			session = "active"
 	return "%s | %s | frames %d rejected %d" % [status, session, received_frames, rejected_frames]
