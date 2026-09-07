@@ -184,7 +184,7 @@ func _configure_arm_ik() -> void:
 		_arm_tip_rest_basis[side] = _skeleton.get_bone_global_pose(tip_bone).basis
 		_arm_hand_axes[side] = _find_hand_forward_axis(tip_bone)
 		_arm_palm_normal_axes[side] = _find_palm_normal_axis(tip_bone, _arm_hand_axes[side])
-		_arm_neutral_target_basis[side] = _arm_tip_rest_basis[side]
+		_arm_neutral_target_basis[side] = _forward_facing_hand_basis(side)
 		_create_arm_debug(side)
 		_configure_finger_controls(side, tip_bone)
 
@@ -596,11 +596,11 @@ func _apply_arm_pose(landmarks: Dictionary, target_side: String, source_side: St
 		ik.start()
 
 
-func _elbow_pole_target(shoulder: Vector3, _wrist: Vector3, _elbow: Vector3, side: String) -> Vector3:
-	# A fixed torso-relative pole avoids the 180-degree plane flip that occurs
-	# when a wrist-dependent pole crosses a nearly straight shoulder/wrist line.
+func _elbow_pole_target(shoulder: Vector3, wrist: Vector3, _elbow: Vector3, side: String) -> Vector3:
+	# Follow the wrist smoothly without deriving a direction from the arm line,
+	# which can cross a singularity and flip the elbow plane by 180 degrees.
 	var outward := -1.0 if side == "right" else 1.0
-	return shoulder + Vector3(outward * 0.34, -0.42, 0.10)
+	return shoulder.lerp(wrist, 0.5) + Vector3(outward * 0.24, -0.28, 0.10)
 
 
 func _map_human_position(value: Array) -> Vector3:

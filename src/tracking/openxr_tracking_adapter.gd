@@ -64,7 +64,7 @@ func _emit_current_pose() -> void:
 	if not _origin_captured:
 		_origin_head = head
 		_origin_captured = true
-	var relative_head := _origin_head.affine_inverse() * head
+	var relative_head := _to_session_origin(head)
 	var frame = PoseFrameScript.new(Time.get_ticks_usec())
 	frame.landmarks = {
 		"head_position": _vector3_array(relative_head.origin),
@@ -76,8 +76,8 @@ func _emit_current_pose() -> void:
 	_hand_tracker_candidates = 0
 	_hand_inputs.left = Vector2.ZERO
 	_hand_inputs.right = Vector2.ZERO
-	_append_hand(frame, "left_hand", HAND_LEFT, head)
-	_append_hand(frame, "right_hand", HAND_RIGHT, head)
+	_append_hand(frame, "left_hand", HAND_LEFT)
+	_append_hand(frame, "right_hand", HAND_RIGHT)
 	received_frames += 1
 	var tracker_diagnostic := _tracker_diagnostic()
 	status = "OpenXR head + %d hand(s), %d candidate(s) | L t%.2f/g%.2f R t%.2f/g%.2f | %s" % [
@@ -91,20 +91,20 @@ func _emit_current_pose() -> void:
 	pose_received.emit(frame)
 
 
-func _append_hand(frame: Variant, key: String, hand: int, current_head: Transform3D) -> void:
+func _append_hand(frame: Variant, key: String, hand: int) -> void:
 	var trackers: Array = _find_hand_trackers(hand)
 	_hand_tracker_candidates += trackers.size()
 	for tracker: Variant in trackers:
 		var hand_transform: Variant = _read_hand_transform(tracker)
 		if hand_transform == null:
 			continue
-		hand_transform = current_head.affine_inverse() * (hand_transform as Transform3D)
+		# Head and controllers remain independent observations in one XR-origin
+		# frame. A moving HMD must never counter-transform the controller poses.
+		hand_transform = _to_session_origin(hand_transform as Transform3D)
 		var hand_data := _transform_dictionary(hand_transform)
 		if tracker.has_method("get_input"):
-			for action_name: StringName in [&"trigger", &"grip"]:
-				var input_value: Variant = tracker.call("get_input", action_name)
-				if input_value is float or input_value is int:
-					hand_data[String(action_name)] = clampf(float(input_value), 0.0, 1.0)
+			hand_data.trigger = _maximum_input(tracker, [&"trigger", &"trigger_click"])
+			hand_data.grip = _maximum_input(tracker, [&"grip", &"grip_click", &"grip_force"])
 		var input_key := "left" if hand == HAND_LEFT else "right"
 		_hand_inputs[input_key] = Vector2(
 			float(hand_data.get("trigger", 0.0)), float(hand_data.get("grip", 0.0))
@@ -113,6 +113,23 @@ func _append_hand(frame: Variant, key: String, hand: int, current_head: Transfor
 		frame.confidence[key] = 1.0
 		_tracked_hands += 1
 		return
+
+
+func _maximum_input(tracker: Variant, action_names: Array[StringName]) -> float:
+	var result := 0.0
+	for action_name: StringName in action_names:
+		var input_value: Variant = tracker.call("get_input", action_name)
+		if input_value is bool:
+			result = maxf(result, 1.0 if input_value else 0.0)
+		elif input_value is float or input_value is int:
+			result = maxf(result, clampf(float(input_value), 0.0, 1.0))
+	return result
+
+
+func _to_session_origin(observation: Transform3D) -> Transform3D:
+	# This transform is captured once, never recomputed from the live HMD pose.
+	# Every tracked device therefore remains in the same stable coordinate frame.
+	return _origin_head.affine_inverse() * observation
 
 
 func _read_hand_transform(tracker: Variant) -> Variant:

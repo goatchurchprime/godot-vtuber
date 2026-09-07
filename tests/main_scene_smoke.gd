@@ -78,6 +78,12 @@ func _run() -> void:
 	var right_shoulder: Vector3 = avatar._skeleton.get_bone_global_pose(int(avatar._arm_root_bones.right)).origin
 	assert(right_ik.magnet.y < right_shoulder.y, "pole target must stay below the shoulder")
 	assert(right_ik.magnet.x < right_shoulder.x, "right-arm pole target must stay outward")
+	var first_pole := right_ik.magnet
+	pose.landmarks.left_hand.position[1] += 0.20
+	avatar.set_pose(pose)
+	assert(right_ik.magnet.distance_to(first_pole) > 0.09, "elbow pole should follow wrist motion")
+	pose.landmarks.left_hand.position[1] -= 0.20
+	avatar.set_pose(pose)
 	var neutral_hand_basis := right_ik.target.basis
 	pose.landmarks.left_hand.rotation_quaternion = [0.0, 0.0, sin(0.2), cos(0.2)]
 	avatar.set_pose(pose)
