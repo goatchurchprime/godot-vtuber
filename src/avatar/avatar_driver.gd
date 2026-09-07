@@ -35,11 +35,12 @@ const VISEME_SHAPE_ALIASES := [
 @export_range(0.0, 500.0, 5.0, "or_greater") var mouth_attack_ms := 80.0
 @export_range(0.0, 500.0, 5.0, "or_greater") var mouth_release_ms := 45.0
 @export_range(-0.5, 0.5, 0.01) var hand_height_offset := 0.12
+@export_range(-0.5, 0.5, 0.01) var hand_forward_offset := 0.15
 @export var mirror_controller_assignment := true
 @export var show_ik_debug := true
 @export_range(0.05, 1.0, 0.01) var elbow_pole_distance := 0.20
-@export_range(0.0, 1.0, 0.01) var chest_follow_strength := 0.14
-@export_range(0.05, 1.0, 0.01) var chest_follow_time_sec := 0.22
+@export_range(0.0, 1.0, 0.01) var chest_follow_strength := 0.28
+@export_range(0.05, 1.0, 0.01) var chest_follow_time_sec := 0.25
 
 var status := "no avatar"
 var _meshes: Array[MeshInstance3D] = []
@@ -595,24 +596,20 @@ func _apply_arm_pose(landmarks: Dictionary, target_side: String, source_side: St
 		ik.start()
 
 
-func _elbow_pole_target(shoulder: Vector3, wrist: Vector3, elbow: Vector3, side: String) -> Vector3:
-	var shoulder_to_wrist := wrist - shoulder
-	var line_length_squared := shoulder_to_wrist.length_squared()
-	var projected := shoulder
-	if line_length_squared > 0.000001:
-		var along := clampf((elbow - shoulder).dot(shoulder_to_wrist) / line_length_squared, 0.0, 1.0)
-		projected = shoulder + shoulder_to_wrist * along
-	var pole_direction := (elbow - projected).normalized()
-	if pole_direction.is_zero_approx():
-		pole_direction = Vector3.LEFT if side == "right" else Vector3.RIGHT
-	return elbow + pole_direction * elbow_pole_distance
+func _elbow_pole_target(shoulder: Vector3, _wrist: Vector3, _elbow: Vector3, side: String) -> Vector3:
+	# A fixed torso-relative pole avoids the 180-degree plane flip that occurs
+	# when a wrist-dependent pole crosses a nearly straight shoulder/wrist line.
+	var outward := -1.0 if side == "right" else 1.0
+	return shoulder + Vector3(outward * 0.34, -0.42, 0.10)
 
 
 func _map_human_position(value: Array) -> Vector3:
 	# Preserve screen-space X in mirror mode. The opposite anatomical arm is
 	# selected above so the chain does not cross through the avatar's torso.
 	return _head_reference_position + Vector3(
-		float(value[0]), float(value[1]) + hand_height_offset, -float(value[2])
+		float(value[0]),
+		float(value[1]) + hand_height_offset,
+		-float(value[2]) + hand_forward_offset
 	)
 
 

@@ -75,9 +75,9 @@ func _run() -> void:
 	assert(avatar._arm_debug_target_ray.size() == 2 and avatar._arm_debug_achieved_ray.size() == 2)
 	assert(avatar._arm_debug_target_palm.size() == 2 and avatar._arm_debug_achieved_palm.size() == 2)
 	assert(not (avatar._arm_hand_axes.right as Vector3).is_zero_approx())
-	var source_elbow: Array = pose.landmarks.left_elbow
-	var mapped_elbow: Vector3 = avatar._map_human_position(source_elbow)
-	assert(right_ik.magnet.distance_to(mapped_elbow) > 0.19, "pole target should be displaced beyond the estimated elbow")
+	var right_shoulder: Vector3 = avatar._skeleton.get_bone_global_pose(int(avatar._arm_root_bones.right)).origin
+	assert(right_ik.magnet.y < right_shoulder.y, "pole target must stay below the shoulder")
+	assert(right_ik.magnet.x < right_shoulder.x, "right-arm pole target must stay outward")
 	var neutral_hand_basis := right_ik.target.basis
 	pose.landmarks.left_hand.rotation_quaternion = [0.0, 0.0, sin(0.2), cos(0.2)]
 	avatar.set_pose(pose)

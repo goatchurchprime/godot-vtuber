@@ -22,6 +22,7 @@ var _origin_captured := false
 var _tracked_hands := 0
 var _hand_tracker_candidates := 0
 var _last_tracker_diagnostic := ""
+var _hand_inputs := {"left": Vector2.ZERO, "right": Vector2.ZERO}
 
 
 func start() -> bool:
@@ -73,12 +74,16 @@ func _emit_current_pose() -> void:
 	frame.confidence = {"head": 1.0}
 	_tracked_hands = 0
 	_hand_tracker_candidates = 0
-	_append_hand(frame, "left_hand", HAND_LEFT)
-	_append_hand(frame, "right_hand", HAND_RIGHT)
+	_hand_inputs.left = Vector2.ZERO
+	_hand_inputs.right = Vector2.ZERO
+	_append_hand(frame, "left_hand", HAND_LEFT, head)
+	_append_hand(frame, "right_hand", HAND_RIGHT, head)
 	received_frames += 1
 	var tracker_diagnostic := _tracker_diagnostic()
-	status = "OpenXR head + %d hand(s), %d candidate(s) | %s" % [
-		_tracked_hands, _hand_tracker_candidates, tracker_diagnostic,
+	status = "OpenXR head + %d hand(s), %d candidate(s) | L t%.2f/g%.2f R t%.2f/g%.2f | %s" % [
+		_tracked_hands, _hand_tracker_candidates,
+		_hand_inputs.left.x, _hand_inputs.left.y, _hand_inputs.right.x, _hand_inputs.right.y,
+		tracker_diagnostic,
 	]
 	if tracker_diagnostic != _last_tracker_diagnostic:
 		_last_tracker_diagnostic = tracker_diagnostic
@@ -86,20 +91,24 @@ func _emit_current_pose() -> void:
 	pose_received.emit(frame)
 
 
-func _append_hand(frame: Variant, key: String, hand: int) -> void:
+func _append_hand(frame: Variant, key: String, hand: int, current_head: Transform3D) -> void:
 	var trackers: Array = _find_hand_trackers(hand)
 	_hand_tracker_candidates += trackers.size()
 	for tracker: Variant in trackers:
 		var hand_transform: Variant = _read_hand_transform(tracker)
 		if hand_transform == null:
 			continue
-		hand_transform = _origin_head.affine_inverse() * (hand_transform as Transform3D)
+		hand_transform = current_head.affine_inverse() * (hand_transform as Transform3D)
 		var hand_data := _transform_dictionary(hand_transform)
 		if tracker.has_method("get_input"):
 			for action_name: StringName in [&"trigger", &"grip"]:
 				var input_value: Variant = tracker.call("get_input", action_name)
 				if input_value is float or input_value is int:
 					hand_data[String(action_name)] = clampf(float(input_value), 0.0, 1.0)
+		var input_key := "left" if hand == HAND_LEFT else "right"
+		_hand_inputs[input_key] = Vector2(
+			float(hand_data.get("trigger", 0.0)), float(hand_data.get("grip", 0.0))
+		)
 		frame.landmarks[key] = hand_data
 		frame.confidence[key] = 1.0
 		_tracked_hands += 1
