@@ -22,6 +22,7 @@ func _run() -> void:
 	assert(avatar.status.begins_with("avatar ready"), avatar.status)
 	assert(main.avatar_y != null)
 	assert(main.mouth_attack != null)
+	assert(main.microphone_starts_enabled, "microphone startup policy should default to enabled")
 	main.mouth_attack.value = 135.0
 	assert(is_equal_approx(avatar.mouth_attack_ms, 135.0))
 	assert(Engine.max_fps == 60)

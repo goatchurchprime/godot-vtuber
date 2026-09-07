@@ -132,6 +132,7 @@ layout_mode = 2
 [node name="Microphone" type="CheckButton" parent="Margin/Rows/Columns/Diagnostics/Margin/Rows/Controls" unique_id=868040920]
 unique_name_in_owner = true
 layout_mode = 2
+button_pressed = true
 text = "Mic"
 
 [node name="Monitor" type="CheckButton" parent="Margin/Rows/Columns/Diagnostics/Margin/Rows/Controls" unique_id=601571616]

@@ -21,6 +21,7 @@ var _origin_head := Transform3D.IDENTITY
 var _origin_captured := false
 var _tracked_hands := 0
 var _hand_tracker_candidates := 0
+var _last_tracker_diagnostic := ""
 
 
 func start() -> bool:
@@ -75,9 +76,13 @@ func _emit_current_pose() -> void:
 	_append_hand(frame, "left_hand", HAND_LEFT)
 	_append_hand(frame, "right_hand", HAND_RIGHT)
 	received_frames += 1
-	status = "OpenXR tracking head + %d hand(s), %d candidate(s)" % [
-		_tracked_hands, _hand_tracker_candidates,
+	var tracker_diagnostic := _tracker_diagnostic()
+	status = "OpenXR head + %d hand(s), %d candidate(s) | %s" % [
+		_tracked_hands, _hand_tracker_candidates, tracker_diagnostic,
 	]
+	if tracker_diagnostic != _last_tracker_diagnostic:
+		_last_tracker_diagnostic = tracker_diagnostic
+		print("OPENXR_TRACKERS ", tracker_diagnostic)
 	pose_received.emit(frame)
 
 
@@ -130,6 +135,24 @@ func _find_hand_trackers(hand: int) -> Array:
 			if int(tracker.call("get_tracker_hand")) == hand and not result.has(tracker):
 				result.append(tracker)
 	return result
+
+
+func _tracker_diagnostic() -> String:
+	var entries: Array[String] = []
+	var trackers: Dictionary = XRServer.get_trackers(TRACKER_CONTROLLER | TRACKER_HAND)
+	for tracker_name: Variant in trackers:
+		var tracker: Variant = trackers[tracker_name]
+		var poses: Array[String] = []
+		if tracker != null and not tracker.is_class("XRHandTracker"):
+			for pose_name: StringName in [&"grip", &"default", &"aim"]:
+				if tracker.call("has_pose", pose_name):
+					var pose: Variant = tracker.call("get_pose", pose_name)
+					if pose != null:
+						var live := bool(pose.call("get_has_tracking_data")) \
+							if pose.has_method("get_has_tracking_data") else bool(pose.get("has_tracking_data"))
+						poses.append("%s:%s" % [pose_name, "live" if live else "idle"])
+		entries.append("%s[%s]" % [tracker_name, ",".join(poses)])
+	return "; ".join(entries) if not entries.is_empty() else "no hand/controller trackers"
 
 
 func _transform_dictionary(value: Transform3D) -> Dictionary:

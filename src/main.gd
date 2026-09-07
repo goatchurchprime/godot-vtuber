@@ -14,6 +14,8 @@ const MediaPipeUdpAdapterScript := preload("res://src/tracking/mediapipe_udp_ada
 const SyntheticTrackingAdapterScript := preload("res://src/tracking/synthetic_tracking_adapter.gd")
 const OpenXRTrackingAdapterScript := preload("res://src/tracking/openxr_tracking_adapter.gd")
 const HumanArmSolverScript := preload("res://src/tracking/human_arm_solver.gd")
+
+@export var microphone_starts_enabled := true
 const GATE_HYSTERESIS_DB := 6.0
 const GATE_RELEASE_CHUNKS := 6
 const DIAGNOSTIC_INTERVAL_SEC := 0.25
@@ -102,6 +104,8 @@ func _ready() -> void:
 		input_device.disabled = true
 	_configure_visemes()
 	_configure_tracking()
+	if microphone_starts_enabled and microphone.button_pressed and not microphone.disabled:
+		_set_microphone_enabled(true)
 	_update_activity_policy()
 
 
